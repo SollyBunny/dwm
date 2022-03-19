@@ -38,6 +38,8 @@ static const char *const autostart[] = {
 	"xrandr", "--output", SCREENEDP, "--off", NULL,
 	"status", NULL,
 	"/home/solly/Backgrounds/fehbg", NULL,
+	"dunst", NULL,
+	"xcompmgr", NULL,
 	/*
 		"picom",
 			"--experimental-backends", "--backend", "glx", 
