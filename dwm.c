@@ -92,7 +92,7 @@ struct Client {
 	int oldx, oldy, oldw, oldh;
 	int basew, baseh, incw, inch, maxw, maxh, minw, minh;
 	unsigned int tags;
-	int isalwaysontop, neverfocus, isfullscreen;
+	int isalwaysontop, isfullscreen;
 	Client *next;
 	Client *snext;
 	Monitor *mon;
@@ -196,7 +196,6 @@ static void updatesizehints(Client *c);
 static void updatestatus(void);
 static void updatetitle(Client *c);
 static void updatewindowtype(Client *c);
-static void updatewmhints(Client *c);
 static void view(const Arg *arg);
 static Client *wintoclient(Window w);
 static Monitor *wintomon(Window w);
@@ -1007,7 +1006,6 @@ manage(Window w, XWindowAttributes *wa)
 
 	updatewindowtype(c);
 	updatesizehints(c);
-	updatewmhints(c);
 	XSelectInput(dpy, w, EnterWindowMask|FocusChangeMask|PropertyChangeMask|StructureNotifyMask);
 	grabbuttons(c, 0);
 	XRaiseWindow(dpy, c->win);
@@ -1117,7 +1115,6 @@ propertynotify(XEvent *e)
 			updatesizehints(c);
 			break;
 		case XA_WM_HINTS:
-			updatewmhints(c);
 			drawbars();
 			break;
 		}
@@ -1337,12 +1334,10 @@ sendevent(Client *c, Atom proto)
 void
 setfocus(Client *c)
 {
-	if (!c->neverfocus) {
-		XSetInputFocus(dpy, c->win, RevertToPointerRoot, CurrentTime);
-		XChangeProperty(dpy, root, netatom[NetActiveWindow],
-			XA_WINDOW, 32, PropModeReplace,
-			(unsigned char *) &(c->win), 1);
-	}
+	XSetInputFocus(dpy, c->win, RevertToPointerRoot, CurrentTime);
+	XChangeProperty(dpy, root, netatom[NetActiveWindow],
+		XA_WINDOW, 32, PropModeReplace,
+		(unsigned char *) &(c->win), 1);
 	sendevent(c, wmatom[WMTakeFocus]);
 }
 
@@ -1780,20 +1775,6 @@ updatewindowtype(Client *c)
 	Atom state = getatomprop(c, netatom[NetWMState]);
 	if (state == netatom[NetWMFullscreen])
 		setfullscreen(c, 1);
-}
-
-void
-updatewmhints(Client *c)
-{
-	XWMHints *wmh;
-
-	if ((wmh = XGetWMHints(dpy, c->win))) {
-		if (wmh->flags & InputHint)
-			c->neverfocus = !wmh->input;
-		else
-			c->neverfocus = 0;
-		XFree(wmh);
-	}
 }
 
 void
