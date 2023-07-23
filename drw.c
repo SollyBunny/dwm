@@ -22,6 +22,7 @@ utf8decodebyte(const char c, size_t *i)
 	for (*i = 0; *i < (UTF_SIZ + 1); ++(*i))
 		if (((unsigned char)c & utfmask[*i]) == utfbyte[*i])
 			return (unsigned char)c & ~utfmask[*i];
+			//return utfmask[*i];
 	return 0;
 }
 
@@ -353,7 +354,8 @@ drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lp
 			fcpattern = FcPatternDuplicate(drw->fonts->pattern);
 			FcPatternAddCharSet(fcpattern, FC_CHARSET, fccharset);
 			FcPatternAddBool(fcpattern, FC_SCALABLE, FcTrue);
-			FcPatternAddBool(fcpattern, FC_COLOR, FcFalse);
+			// FcPatternAddBool(fcpattern, FC_COLOR, FcFalse);
+			FcPatternAddBool(fcpattern, FC_COLOR, FcTrue);
 
 			FcConfigSubstitute(NULL, fcpattern, FcMatchPattern);
 			FcDefaultSubstitute(fcpattern);

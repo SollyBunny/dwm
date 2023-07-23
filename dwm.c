@@ -495,6 +495,10 @@ configurerequest(XEvent *e)
 			configure(c);
 		if (ISVISIBLE(c))
 			XMoveResizeWindow(dpy, c->win, c->x, c->y, c->w, c->h);
+		if (ev->detail == Above)
+			XRaiseWindow(dpy, c->win);
+		else if (ev->detail == Below)
+			XLowerWindow(dpy, c->win);
 	} else {
 		wc.x = ev->x;
 		wc.y = ev->y;
@@ -958,8 +962,7 @@ keypress(XEvent *e)
 void
 killclient(const Arg *arg)
 {
-	if (!selmon->sel)
-		return;
+	if (!selmon->sel) return;
 	if (!sendevent(selmon->sel, wmatom[WMDelete])) {
 		XGrabServer(dpy);
 		XSetErrorHandler(xerrordummy);
@@ -1093,6 +1096,7 @@ movemouse(const Arg *arg)
 void
 moveresize(const Arg *arg)
 {
+	if (!selmon->sel) return;
 	resize(
 		selmon->sel, 
 		((int *)arg->v)[0], ((int *)arg->v)[1], 
@@ -1505,8 +1509,6 @@ void
 togglealwaysontop(const Arg *arg)
 {
 	if (!selmon->sel)
-		return;
-	if (selmon->sel->isfullscreen)
 		return;
 
 	if (selmon->sel->isalwaysontop) {

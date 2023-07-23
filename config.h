@@ -2,9 +2,10 @@
 
 /* definitions */
 #define SCREENEDP "eDP-1"
+//#define SCREENHDM "HDMI-1-1" // Noevau
 #define SCREENHDM "HDMI-1-0"
 #define MODKEY Mod4Mask
-#define ALTKEY Mod1Mask
+// #define ALTKEY Mod1Mask
 #define GAP 10
 #define BH 18
 #define W 1920
@@ -13,7 +14,7 @@
 /* appearance */
 static const char *fonts[]          = { "SourceCodePro-ExtraLight:pixelsize=15:antialias=false:autohint=true" };
 static const char col_bg []         = "#000000";
-static const char col_fg []         = "#ff00ff";
+static const char col_fg []         = "#ffddff";
 static const char col_txt[]         = "#ffffff";
 static const unsigned int alpha     = 0xff * 0.7;
 
@@ -37,20 +38,24 @@ static const char *const autostart[] = {
 	"xrandr", "--output", SCREENHDM, "--preferred", NULL,
 	"xrandr", "--output", SCREENEDP, "--off", NULL,
 	"status", NULL,
-	"/home/solly/Backgrounds/fehbg", NULL,
+	"/home/install/util/theme/run.sh", NULL,
 	"dunst", NULL,
-	"xcompmgr", NULL,
+	//"xcompmgr", NULL,
 	/*
-		"picom",
-			"--experimental-backends", "--backend", "glx", 
-			"--glx-no-stencil", "--glx-no-rebind-pixmap", 
-			"--blur-method", "dual_kawase", "--blur-strength", "3", 
-			"--vsync", "--no-fading-openclose", 
-			//"--transparent-clipping",
-			"-r", "5", 
-			"--corner-radius", "5", 
-		"xrandr", "-s", "1920x1080", NULL, 
+picom --backend glx --glx-no-stencil --glx-no-rebind-pixmap --blur-method dual_kawase --blur-strength 5 --vsync --no-fading-openclose -r 10 -c --corner-radius 5 --shadow-offset-x -10 --shadow-offset-y -10 --shadow-red 1 --shadow-green 0.8 --shadow-blue 1
 	*/
+	"picom",
+		"--backend", "glx", 
+		"--glx-no-stencil", "--glx-no-rebind-pixmap", 
+		"--blur-method", "dual_kawase", "--blur-strength", "5", 
+		"--vsync", "--no-fading-openclose", 
+		"--corner-radius", "5", 
+		"-c",
+		"-r", "10",
+		"--shadow-offset-x", "-10", "--shadow-offset-y", "-10",
+		"--shadow-red", "1", "--shadow-green", "0.8", "--shadow-blue", "1",
+	NULL,
+	"browser", NULL,
 	NULL
 };
 
@@ -84,72 +89,87 @@ static void alt_tab(const Arg *arg) {
 }
 
 /* commands */
-static const char *termcmd[]      = { "st",                                        NULL };
-static const char *fmcmd[]        = { "pcmanfm",                                   NULL };
-static const char *pavucmd[]      = { "/home/install/util/scripts/pavucontrol.sh", NULL };
 
-static const char *ffcmd[]        = { "firefox",                                   NULL };
-static const char *dccmd[]        = { "discord",                                   NULL };
-static const char *mccmd[]        = { "multimc",                                   NULL };
+#define TERM "kitty"
 
-static const char *screencmd[]    = { "screenshot",                                NULL};
-static const char *xkillcmd[]     = { "xkill",                                     NULL };
+static const char *termcmd[]      = { TERM,                                          NULL };
+static const char *fmcmd[]        = { "pcmanfm",                                     NULL };
+static const char *pavucmd[]      = { TERM, "-e", "pulsemixer",                      NULL };
+
+static const char *brcmd[]        = { "browser",                                     NULL };
+static const char *mccmd[]        = { "prism",                                       NULL };
+static const char *stcmd[]        = { "steam",                                       NULL };
+static const char *twcmd[]        = { "ddnet",                                       NULL };
+
+static const char *screencmd[]    = { "screenshot",                                  NULL };
+static const char *screenallcmd[] = { "screenshot", "1",                             NULL };
+static const char *xkillcmd[]     = { "xkill",                                       NULL };
+static const char *sleepcmd[]     = { "doas", "/home/install/util/scripts/sleep.sh", NULL };
+static const char *goodstartcmd[] = { "/home/install/util/scripts/goodstart.sh",     NULL };
 
 static Key keys[] = {
-	/* modifier                        key        function        argument */
+	/* modifier             key        function            argument */
 
-	{ MODKEY,		        XK_t,	   spawn,         	  { .v = termcmd   } },
-	{ MODKEY,				XK_e,      spawn,			  { .v = fmcmd     } },
-	{ MODKEY,		        XK_v,	   spawn,         	  { .v = pavucmd   } },
+	{ MODKEY,		        XK_t,	   spawn,         	  { .v = termcmd      } },
+	{ MODKEY,				XK_e,      spawn,			  { .v = fmcmd        } },
+	{ MODKEY,		        XK_v,	   spawn,         	  { .v = pavucmd      } },
 
-	{ MODKEY,				XK_f,      spawn,			  { .v = ffcmd     } },
-	{ MODKEY,				XK_d,      spawn,			  { .v = dccmd     } },
-	{ MODKEY,				XK_m,      spawn,			  { .v = mccmd     } },
+	{ MODKEY,				XK_f,      spawn,			  { .v = brcmd        } },
+	{ MODKEY,				XK_m,      spawn,			  { .v = mccmd        } },
+	{ MODKEY,				XK_s,      spawn,			  { .v = stcmd        } },
+	{ MODKEY,				XK_d,      spawn,			  { .v = twcmd        } },
 
-	{ 0,					XK_Print,  spawn,			  { .v = screencmd } },
-	{ MODKEY,				XK_F4,     spawn,			  { .v = xkillcmd  } },
+	{ MODKEY,				XK_Print,  spawn,			  { .v = screenallcmd } },
+	{ 0,					XK_Print,  spawn,			  { .v = screencmd    } },
 
-	{ ALTKEY|ControlMask,   XK_Delete, quit,              { 0 			   } },
-	{ ALTKEY,             	XK_F4,     killclient,        { 0              } },
+	{ MODKEY|ControlMask,   XK_Delete, quit,              { 0 			      } },
+	{ MODKEY,             	XK_F4,     killclient,        { 0                 } },
+	{ MODKEY|ShiftMask,	    XK_F4,     spawn,			  { .v = xkillcmd     } },
 
-	{ 0,                    XK_Alt_L,  start_alt_tab,     { 0              } },
-    { ALTKEY,               XK_Tab,    alt_tab,           { 0              } },
+	{ 0,                    XK_Super_L, start_alt_tab,    { 0                 } },
+    { MODKEY,               XK_Tab,    alt_tab,           { 0                 } },
+
+	{ MODKEY,		        XK_p,	   spawn,         	  { .v = sleepcmd     } },
+	{ MODKEY,		        XK_g,	   spawn,         	  { .v = goodstartcmd } },
     
-    { ALTKEY,               XK_space,  togglealwaysontop, { 0              } },
+    { MODKEY,               XK_space,  togglealwaysontop, { 0                 } },
 	
-	{ ALTKEY,               XK_1,      view,              { .ui = 1        } },
-	{ ALTKEY,               XK_2,      view,              { .ui = 2        } },
-	{ ALTKEY,               XK_3,      view,              { .ui = 4        } },
-	{ ALTKEY,               XK_4,      view,              { .ui = 8        } },
-	{ ALTKEY,               XK_5,      view,              { .ui = 16       } },
-	{ ALTKEY,               XK_6,      view,              { .ui = 32       } },
-	{ ALTKEY,               XK_7,      view,              { .ui = 64       } },
-	{ ALTKEY,               XK_8,      view,              { .ui = 128      } },
-	{ ALTKEY,               XK_9,      view,              { .ui = 256      } },
+	{ MODKEY,               XK_1,      view,              { .ui = 1           } },
+	{ MODKEY,               XK_2,      view,              { .ui = 2           } },
+	{ MODKEY,               XK_3,      view,              { .ui = 4           } },
+	{ MODKEY,               XK_4,      view,              { .ui = 8           } },
+	{ MODKEY,               XK_5,      view,              { .ui = 16          } },
+	{ MODKEY,               XK_6,      view,              { .ui = 32          } },
+	{ MODKEY,               XK_7,      view,              { .ui = 64          } },
+	{ MODKEY,               XK_8,      view,              { .ui = 128         } },
+	{ MODKEY,               XK_9,      view,              { .ui = 256         } },
 
-	{ ALTKEY|ShiftMask,     XK_1,      tag,               { .i = 1         } },
-	{ ALTKEY|ShiftMask,     XK_2,      tag,               { .i = 2         } },
-	{ ALTKEY|ShiftMask,     XK_3,      tag,               { .i = 4         } },
-	{ ALTKEY|ShiftMask,     XK_4,      tag,               { .i = 8         } },
-	{ ALTKEY|ShiftMask,     XK_5,      tag,               { .i = 16        } },
-	{ ALTKEY|ShiftMask,     XK_6,      tag,               { .i = 32        } },
-	{ ALTKEY|ShiftMask,     XK_7,      tag,               { .i = 64        } },
-	{ ALTKEY|ShiftMask,     XK_8,      tag,               { .i = 128       } },
-	{ ALTKEY|ShiftMask,     XK_9,      tag,               { .i = 256       } },
+	{ MODKEY|ShiftMask,     XK_1,      tag,               { .i  = 1           } },
+	{ MODKEY|ShiftMask,     XK_2,      tag,               { .i  = 2           } },
+	{ MODKEY|ShiftMask,     XK_3,      tag,               { .i  = 4           } },
+	{ MODKEY|ShiftMask,     XK_4,      tag,               { .i  = 8           } },
+	{ MODKEY|ShiftMask,     XK_5,      tag,               { .i  = 16          } },
+	{ MODKEY|ShiftMask,     XK_6,      tag,               { .i  = 32          } },
+	{ MODKEY|ShiftMask,     XK_7,      tag,               { .i  = 64          } },
+	{ MODKEY|ShiftMask,     XK_8,      tag,               { .i  = 128         } },
+	{ MODKEY|ShiftMask,     XK_9,      tag,               { .i  = 256         } },
 
-	{ ALTKEY,				XK_q,	   moveresize,		  { .v = (int []){ GAP                  , GAP                  , W/2 - (GAP*1.5), H/2 - GAP } } },
-	{ ALTKEY,				XK_w,	   moveresize,		  { .v = (int []){ GAP                  , GAP                  , W   - (GAP*2  ), H/2 - GAP } } },
-	{ ALTKEY,				XK_e,	   moveresize,		  { .v = (int []){ (W/2) + (GAP*0.5)    , GAP                  , W/2 - (GAP*1.5), H/2 - GAP } } },
+	{ MODKEY|ShiftMask,     XK_q,      moveresize,        { .v = (int []){ GAP                  , GAP                  , W/2 - (GAP*1.5), H/2 - GAP } } },
+	{ MODKEY|ShiftMask,     XK_a,      moveresize,        { .v = (int []){ GAP                  , GAP                  , W/2 - (GAP*1.5), H   - GAP } } },
+	{ MODKEY|ShiftMask,     XK_z,      moveresize,        { .v = (int []){ GAP                  , H/2 + GAP            , W/2 - (GAP*1.5), H/2 - GAP } } },
 
-	{ ALTKEY,				XK_a,	   moveresize,		  { .v = (int []){ GAP                  , GAP                  , W/2 - (GAP*1.5), H   - GAP } } },
-	{ ALTKEY,				XK_s,	   moveresize,		  { .v = (int []){ GAP                  , GAP                  , W   - (GAP*2  ), H   - GAP } } },
-	{ ALTKEY,				XK_d,	   moveresize,		  { .v = (int []){ (W/2) + (GAP*0.5)    , GAP                  , W/2 - (GAP*1.5), H   - GAP } } },
+	{ MODKEY,               XK_q,      moveresize,        { .v = (int []){ GAP                  , GAP                  , W   - (GAP*2  ), H/2 - GAP } } },
+	{ MODKEY,               XK_a,      moveresize,        { .v = (int []){ GAP                  , GAP                  , W   - (GAP*2  ), H   - GAP } } },
+	{ MODKEY,               XK_z,      moveresize,        { .v = (int []){ GAP                  , H/2 + GAP            , W   - (GAP*2  ), H/2 - GAP } } },
 
-	{ ALTKEY,				XK_z,	   moveresize,		  { .v = (int []){ GAP                  , H/2 + GAP            , W/2 - (GAP*1.5), H/2 - GAP } } },
-	{ ALTKEY,				XK_x,	   moveresize,		  { .v = (int []){ GAP                  , H/2 + GAP            , W   - (GAP*2  ), H/2 - GAP } } },
-	{ ALTKEY,				XK_c,	   moveresize,		  { .v = (int []){ (W/2) + (GAP*0.5)    , H/2 + GAP            , W/2 - (GAP*1.5), H/2 - GAP } } },
+	{ MODKEY|ControlMask,   XK_q,      moveresize,        { .v = (int []){ (W/2) + (GAP*0.5)    , GAP                  , W/2 - (GAP*1.5), H/2 - GAP } } },
+	{ MODKEY|ControlMask,   XK_a,      moveresize,        { .v = (int []){ (W/2) + (GAP*0.5)    , GAP                  , W/2 - (GAP*1.5), H   - GAP } } },
+	{ MODKEY|ControlMask,   XK_z,      moveresize,        { .v = (int []){ (W/2) + (GAP*0.5)    , H/2 + GAP            , W/2 - (GAP*1.5), H/2 - GAP } } },
+
+	{ MODKEY|ControlMask|ShiftMask, XK_q, moveresize,     { .v = (int []){ W/2 - W/4 + (GAP*.75), H/2 - H/4 - (GAP*0.5), W/2 - (GAP*1.5), H/2 - GAP } } },	
+	{ MODKEY|ControlMask|ShiftMask, XK_a, moveresize,     { .v = (int []){ 0                    , 0                    , 1920           , 1080      } } },
+	{ MODKEY|ControlMask|ShiftMask, XK_z, moveresize,     { .v = (int []){ -1920                , -1020                , 1920*2         , 1080*2    } } }
 	
-	{ ALTKEY,				XK_f,	   moveresize,		  { .v = (int []){ W/2 - W/4 + (GAP*.75), H/2 - H/4 - (GAP*0.5), W/2 - (GAP*1.5), H/2 - GAP } } },
 };
 
 /* button definitions */
@@ -161,8 +181,8 @@ static Button buttons[] = {
 	{ ClkStatusText,        0,              Button2,        spawn,          {.v = termcmd } },
 	{ ClkStatusText,        0,              Button3,        spawn,          {.v = termcmd } },
 	
-	{ ClkClientWin,         ALTKEY,         Button1,        movemouse,      {0} },
-	{ ClkClientWin,         ALTKEY,         Button3,        resizemouse,    {0} },
+	{ ClkClientWin,         MODKEY,         Button1,        movemouse,      {0} },
+	{ ClkClientWin,         MODKEY,         Button3,        resizemouse,    {0} },
 	{ ClkTagBar,            0,              Button1,        view,           {0} },
 	
 };
