@@ -1,7 +1,7 @@
 /* See LICENSE file for copyright and license details. */
 
-
-static const unsigned int focusonwheel = 0;
+static const unsigned int focusonhover = 0; /* 0 means focus only on click, otherwise */
+static const unsigned int focusonwheel = 0; /* if focusonhover is 0, whether to count scrolling as click */
 
 /* appearance */
 static const unsigned int borderpx  = 0;        /* border pixel of windows */
