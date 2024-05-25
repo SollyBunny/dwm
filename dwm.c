@@ -570,36 +570,6 @@ void clientmessage(XEvent* e) {
 	}
 }
 
-void col(Monitor* m) {
-	// TODO: make m->w* account for gappx instead of doing it in every layout
-	// NOTE: m->nmaster is just a clone of nmaster per monitor, if the clinet number is under it, its a master
-	unsigned int i, n, w, x, y, mw;
-	Client* c;
-
-	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++);
-	if (n == 0)
-		return;
-
-	if (n == 1) {
-		c = nexttiled(m->clients);
-		resize(c, m->wx + gappx, m->wy + gappx, m->ww - 2 * (gappx + c->bw), m->wh - 2 * (m->gappx + c->bw), False);
-		return;
-	}
-
-	mw = m->mfact * m->ww;
-	w = m->ww - ((n + 1) * m->gappx) - (mw * nmaster);
-
-	for (i = 0, x = y = m->gappx, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++) {
-		if (i < m->nmaster) {
-			resize(c, x, y, mw - 2 * c->bw, m->wh - 2 * (m->gappx + c->bw), False);
-			x += mw + gappx;
-		} else {
-			resize(c, x, y, w / (n - 1) - 2 * c->bw, m->wh - 2 * (m->gappx + c->bw), False);
-			x += w / (n - 1) + gappx;
-		}
-	}
-}
-
 void configure(Client* c) {
 	XConfigureEvent ce;
 	ce.type = ConfigureNotify;
@@ -1331,8 +1301,8 @@ void moveresizetile(const Arg* arg) {
 		return;
 	m = c->mon;
 	static int mw, mh;
-	mw = m->ww - gappx * 2;
-	mh = m->wh - gappx * 2;
+	mw = m->ww;
+	mh = m->wh;
 	static int x, y, w, h;
 	switch (arg->ui) {
 	case TileNW:
@@ -1396,20 +1366,20 @@ void moveresizetile(const Arg* arg) {
 		h = mh / 2 - gappx / 2;
 		break;
 	case TileFullscreen:
-		x = -gappx;
-		y = -gappx;
+		x = -m->wx;
+		y = -m->wy;
 		w = m->mw;
 		h = m->mh;
 		break;
 	case TileDoubleFullscreen:
-		x = -gappx - m->mw;
-		y = -gappx - m->mh;
+		x = -m->wx - m->mw;
+		y = -m->wy - m->mh;
 		w = m->mw * 2;
 		h = m->mh * 2;
 		break;
 	}
-	x += gappx;
-	y += gappx;
+	x += m->wx;
+	y += m->wy;
 	resize(c, x, y, w, h, 1);
 }
 
@@ -1924,20 +1894,50 @@ void tile(Monitor* m) {
 	if (n > m->nmaster)
 		mw = m->nmaster ? m->ww * m->mfact : 0;
 	else
-		mw = m->ww - m->gappx;
-	for (i = 0, my = ty = m->gappx, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
+		mw = m->ww;
+	for (i = 0, my = ty = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
 		if (i < m->nmaster) {
 			h = (m->wh - my) / (MIN(n, m->nmaster) - i) - m->gappx;
-			resize(c, m->wx + m->gappx, m->wy + my, mw - (2 * c->bw) - m->gappx, h - (2 * c->bw), 0);
-			if (my + HEIGHT(c) + m->gappx < m->wh)
+			resize(c, m->wx, m->wy + my, mw - (2 * c->bw) - m->gappx, h - (2 * c->bw), 0);
+			if (my + HEIGHT(c) < m->wh)
 				my += HEIGHT(c) + m->gappx;
 		} else {
 			h = (m->wh - ty) / (n - i) - m->gappx;
-			resize(c, m->wx + mw + m->gappx, m->wy + ty, m->ww - mw - (2 * c->bw) - 2 * m->gappx, h - (2 * c->bw), 0);
-			if (ty + HEIGHT(c) + m->gappx < m->wh)
+			resize(c, m->wx + mw, m->wy + ty, m->ww - mw - (2 * c->bw) - 2 * m->gappx, h - (2 * c->bw), 0);
+			if (ty + HEIGHT(c) < m->wh)
 				ty += HEIGHT(c) + m->gappx;
 		}
 }
+void col(Monitor* m) {
+	unsigned int i, n, w, x, y, mw, ww;
+	Client* c;
+
+	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++);
+	if (n == 0)
+		return;
+
+	if (n == 1) {
+		c = nexttiled(m->clients);
+		resize(c, m->wx, m->wy, m->ww, m->wh, False);
+		return;
+	}
+
+	mw = m->mfact * m->ww;
+	w = m->ww - ((n - 1) * m->gappx) - mw;
+
+	for (i = 0, x = m->wx, y = m->wy, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++) {
+		if (i < m->nmaster) {
+			ww = mw / m->nmaster - (m->gappx * (m->nmaster - 1));
+			resize(c, x, y, ww, m->wh, False);
+			x += ww + gappx;
+		} else {
+			ww = w / (n - 1) - 2;
+			resize(c, x, y, ww, m->wh, False);
+			x += ww + gappx;
+		}
+	}
+}
+
 
 void togglebar(const Arg* arg) {
 	selmon->showbar = !selmon->showbar;
@@ -2080,24 +2080,25 @@ void updatebars(void) {
 }
 
 void updatebarpos(Monitor* m) {
-	m->wx = m->mx;
+	m->wx = m->mx + gappx;
 	if (!m->showbar) {
-		m->wy = m->my;
-		m->ww = m->mw;
-		m->wh = m->mh;
+		m->wy = m->my + gappx;
+		m->ww = m->mw - 2 * m->gappx;
+		m->wh = m->mh - 2 * m->gappx;
 		m->bx = m->by = m->bw = m->bh = 0;
 		return;
 	}
-	m->bw = m->mw - (gappx * 2);
+	m->bw = m->mw - 2 * gappx;
 	m->bh = bh;
 	m->bx = m->mx + gappx;
-	m->wh = m->mh - m->bh - gappx;
+	m->ww = m->mw - 2 * gappx;
+	m->wh = m->mh - m->bh - 3 * gappx;
 	if (m->topbar) {
-		m->wy = m->my;
+		m->wy = m->my + m->bh + 2 * gappx;
 		m->by = m->my + gappx;
 	} else {
-		m->wy = m->my;
-		m->by = m->my + m->wh;
+		m->wy = m->my + gappx;
+		m->by = m->my + m->mh - m->bh - gappx;
 	}
 }
 

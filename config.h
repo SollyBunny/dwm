@@ -8,7 +8,7 @@ static const unsigned int borderpx  = 0;        /* border pixel of windows */
 static const unsigned int gappx     = 10;       /* gaps between windows */
 static const unsigned int snap      = 0;        /* snap pixel */
 static const int showbar            = 1;        /* 0 means no bar */
-static const int topbar             = 0;        /* 0 means bottom bar */
+static const int topbar             = 1;        /* 0 means bottom bar */
 #define ICONSIZE (bh - 2) /* icon size */
 #define FONT_FAMILY "Iosevka Nerd"
 #define FONT_SIZE "17"
@@ -103,18 +103,10 @@ static const char *dmenucmd[] = {
 };
 static const char *termcmd[]      = { TERM,                                          NULL };
 static const char *fmcmd[]        = { "pcmanfm",                                     NULL };
-static const char *pavucmd[]      = { TERM, "-e", "pulsemixer",                      NULL };
-
-static const char *brcmd[]        = { "browser",                                     NULL };
-static const char *mccmd[]        = { "prism",                                       NULL };
-static const char *stcmd[]        = { "steam",                                       NULL };
-static const char *twcmd[]        = { "ddnet",                                       NULL };
 
 static const char *screencmd[]    = { "screenshot",                                  NULL };
 static const char *screenallcmd[] = { "screenshot", "1",                             NULL };
 static const char *xkillcmd[]     = { "xkill",                                       NULL };
-static const char *sleepcmd[]     = { "doas", "/home/install/util/scripts/sleep.sh", NULL };
-static const char *goodstartcmd[] = { "/home/install/util/scripts/goodstart.sh",     NULL };
 
 /* Auto start */
 #define AUTOSTART "~/.dwm/autostart.sh"
@@ -148,9 +140,6 @@ static const Key keys[] = {
 
 	{ 0,                    XK_Super_L, start_alt_tab,    { 0                 } },
     { MODKEY,               XK_Tab,    alt_tab,           { 0                 } },
-
-	{ MODKEY,		        XK_p,	   spawn,         	  { .v = sleepcmd     } },
-	{ MODKEY,		        XK_g,	   spawn,         	  { .v = goodstartcmd } },
     
     { MODKEY,               XK_space,  togglealwaysontop, { .ui = 0           } },
     { MODKEY|ShiftMask,     XK_space,  togglealwaysontop, { .ui = 1           } },
