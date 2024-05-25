@@ -1261,12 +1261,6 @@ void maprequest(XEvent* e) {
 		manage(ev->window, &wa);
 }
 
-void monocle(Monitor* m) {
-	Client* c;
-	for (c = nexttiled(m->clients); c; c = nexttiled(c->next))
-		resize(c, m->wx + gappx, m->wy + gappx, m->ww - 2 * (c->bw + gappx), m->wh - 2 * (c->bw + gappx), 0);
-}
-
 void movemouse(const Arg* arg) {
 	int x, y, ocx, ocy, nx, ny;
 	Client* c;
@@ -1920,32 +1914,7 @@ void tagmon(const Arg* arg) {
 }
 
 void tile(Monitor* m) {
-	unsigned int i, n, h, mw, my, ty;
-	Client* c;
-
-	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++);
-	if (n == 0)
-		return;
-
-	if (n > m->nmaster)
-		mw = m->nmaster ? m->ww * m->mfact : 0;
-	else
-		mw = m->ww;
-	for (i = 0, my = ty = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
-		if (i < m->nmaster) {
-			h = (m->wh - my) / (MIN(n, m->nmaster) - i) - m->gappx;
-			resize(c, m->wx, m->wy + my, mw - (2 * c->bw) - m->gappx, h - (2 * c->bw), 0);
-			if (my + HEIGHT(c) < m->wh)
-				my += HEIGHT(c) + m->gappx;
-		} else {
-			h = (m->wh - ty) / (n - i) - m->gappx;
-			resize(c, m->wx + mw, m->wy + ty, m->ww - mw - (2 * c->bw) - 2 * m->gappx, h - (2 * c->bw), 0);
-			if (ty + HEIGHT(c) < m->wh)
-				ty += HEIGHT(c) + m->gappx;
-		}
-}
-void col(Monitor* m) {
-	unsigned int i, n, w, x, y, mw, ww;
+	unsigned int i, n, nm, my, wy, mh, wh;
 	Client* c;
 
 	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++);
@@ -1954,26 +1923,65 @@ void col(Monitor* m) {
 
 	if (n == 1) {
 		c = nexttiled(m->clients);
-		resize(c, m->wx, m->wy, m->ww, m->wh, False);
+		resize(c, m->wx, m->wy, m->ww - 2 * c->bw, m->wh - 2 * c->bw, 0);
 		return;
 	}
 
-	mw = m->mfact * m->ww;
-	w = m->ww - ((n - 1) * m->gappx) - mw;
-
-	for (i = 0, x = m->wx, y = m->wy, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++) {
-		if (i < m->nmaster) {
-			ww = mw / m->nmaster - (m->gappx * (m->nmaster - 1));
-			resize(c, x, y, ww, m->wh, False);
-			x += ww + gappx;
+	nm = m->nmaster > n ? n : m->nmaster;
+	my = m->wy;
+	wy = m->wy;
+	if (n != nm) wh = (m->wh + m->gappx) / (n - nm);
+	if (nm != 0) mh = (m->wh + m->gappx) / nm;
+	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), ++i) {
+		if (i < nm) {
+			resize(c, m->wx, my, m->ww * m->mfact - m->gappx - 2 * c->bw, mh - m->gappx - 2 * c->bw, 0);
+			my += mh;
 		} else {
-			ww = w / (n - 1) - 2;
-			resize(c, x, y, ww, m->wh, False);
-			x += ww + gappx;
+			resize(c, m->wx + m->ww * m->mfact, wy, m->ww - m->ww * m->mfact - c->bw, wh - m->gappx - 2 * c->bw, 0);
+			wy += wh;
+		}
+	}
+}
+void col(Monitor* m) {
+	unsigned int i, n, x, y, w, h, ww, mw, nm;
+	Client* c;
+
+	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++);
+	if (n == 0)
+		return;
+
+	if (n == 1) {
+		c = nexttiled(m->clients);
+		resize(c, m->wx, m->wy, m->ww - 2 * c->bw, m->wh - 2 * c->bw, 0);
+		return;
+	}
+
+	nm = m->nmaster > n ? n : m->nmaster;
+	x = m->wx;
+	y = m->wy;
+	w = m->ww + m->gappx;
+	h = m->wh;
+	mw = m->ww * m->mfact;
+	ww = w - mw;
+	mw /= nm;
+	if (nm != n) ww /= n - nm;
+	
+	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), ++i) {
+		if (i < nm) {
+			resize(c, x, y, mw - gappx - 2 * c->bw, h - 2 * c->bw, 0);
+			x += mw;
+		} else {
+			resize(c, x, y, ww - gappx - 2 * c->bw, h - 2 * c->bw, 0);
+			x += ww;
 		}
 	}
 }
 
+void monocle(Monitor* m) {
+	Client* c;
+	for (c = nexttiled(m->clients); c; c = nexttiled(c->next))
+		resize(c, m->wx, m->wy, m->ww - 2 * c->bw, m->wh - 2 * c->bw, 0);
+}
 
 void togglebar(const Arg* arg) {
 	selmon->showbar = !selmon->showbar;

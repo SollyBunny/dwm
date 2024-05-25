@@ -123,13 +123,6 @@ static const Key keys[] = {
 	/* modifier                     key        function        argument */
 	{ MODKEY,		        XK_t,	   spawn,         	  { .v = termcmd      } },
 	{ MODKEY,		        XK_r,	   spawn,         	  { .v = dmenucmd     } },
-	// { MODKEY,				XK_e,      spawn,			  { .v = fmcmd        } },
-	// { MODKEY,		        XK_v,	   spawn,         	  { .v = pavucmd      } },
-
-	// { MODKEY,				XK_f,      spawn,			  { .v = brcmd        } },
-	// { MODKEY,				XK_m,      spawn,			  { .v = mccmd        } },
-	// { MODKEY,				XK_s,      spawn,			  { .v = stcmd        } },
-	// { MODKEY,				XK_d,      spawn,			  { .v = twcmd        } },
 
 	{ MODKEY,				XK_Print,  spawn,			  { .v = screenallcmd } },
 	{ 0,					XK_Print,  spawn,			  { .v = screencmd    } },
