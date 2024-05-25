@@ -51,7 +51,7 @@
 #define BUTTONMASK              (ButtonPressMask|ButtonReleaseMask)
 #define CLEANMASK(mask)         (mask & ~(numlockmask|LockMask) & (ShiftMask|ControlMask|Mod1Mask|Mod2Mask|Mod3Mask|Mod4Mask|Mod5Mask))
 #define INTERSECT(x,y,w,h,m)    (MAX(0, MIN((x)+(w),(m)->wx+(m)->ww) - MAX((x),(m)->wx)) \
-                               * MAX(0, MIN((y)+(h),(m)->wy+(m)->wh) - MAX((y),(m)->wy)))
+							   * MAX(0, MIN((y)+(h),(m)->wy+(m)->wh) - MAX((y),(m)->wy)))
 #define ISVISIBLE(C)            ((C->tags & C->mon->tagset[C->mon->seltags]))
 #define LENGTH(X)               (sizeof X / sizeof X[0])
 #define MOUSEMASK               (BUTTONMASK|PointerMotionMask)
@@ -190,6 +190,7 @@ static void drawbars(void);
 static void enternotify(XEvent *e);
 static void expose(XEvent* e);
 static void focus(Client* c);
+static void focusclient(const Arg* arg);
 static void focusin(XEvent* e);
 static void focusmon(const Arg* arg);
 static void focusstack(const Arg* arg);
@@ -505,7 +506,7 @@ void buttonpress(XEvent* e) {
 	for (i = 0; i < LENGTH(buttons); i++)
 		if (click == buttons[i].click && buttons[i].func && buttons[i].button == ev->button
 			&& CLEANMASK(buttons[i].mask) == CLEANMASK(ev->state))
-			buttons[i].func(click == ClkTagBar && buttons[i].arg.i == 0 ? &arg : &buttons[i].arg);
+			buttons[i].func(arg.i == 0 ? &buttons[i].arg : &arg);
 }
 
 void checkotherwm(void) {
@@ -731,7 +732,7 @@ void buttonbar(XButtonPressedEvent* ev, Arg* arg, unsigned int* click) {
 	w = m->bw;
 	if (m == selmon) { /* status is only drawn on selected monitor */
 		tw = TEXTWM(stext) + textpad * 2;
-		if (ev->x > m->bw - tw) {
+		if (ev->x > m->bx + m->bw - tw) {
 			*click = ClkStatusText;
 			return;
 		}
@@ -762,7 +763,21 @@ void buttonbar(XButtonPressedEvent* ev, Arg* arg, unsigned int* click) {
 		}
 	}
 
-	*click = ClkWinTitle;
+	w -= x;
+	
+	if (n > 0) {
+		for (c = m->clients; c; c = c->next) {
+			if (!ISVISIBLE(c))
+				continue;
+			x += w / n;
+			if (ev->x < x) {
+				*click = ClkWinTitle;
+				arg->v = c;
+				return;
+			}
+		}
+	}
+	*click = ClkStatusText;
 
 }
 
@@ -825,22 +840,21 @@ void drawbar(Monitor* m) {
 				continue;
 			ew = w / n;
 			drw_setscheme(drw, scheme[m == selmon && m->sel == c ? SchemeSel : SchemeNorm]);
-			if (c->icon) {
-				tw = c->icw + textpad * 2;
-				if (tw <= ew) {
-					drw_rect(drw, x, 0, tw, m->bh, 1, 1);
-					drw_pic(drw, x + textpad, (m->bh - c->ich) / 2, c->icw, c->ich, c->icon);
-					x += tw;
-					ew -= tw;
-				}
+			
+			if (c->icon && (tw = c->icw + textpad * 2) <= ew) {
+				drw_rect(drw, x, 0, tw, m->bh, 1, 1);
+				drw_pic(drw, x + textpad, (m->bh - c->ich) / 2, c->icw, c->ich, c->icon);
+				if (c->isalwaysontop) drw_rect(drw, x + 1, 1, 4, 4, 0, 0);
+				x += tw;
+				ew -= tw;
+			} else {
+				if (c->isalwaysontop) drw_rect(drw, x + 1, 1, 4, 4, 0, 0);
 			}
 			tw = TEXTW(c->name) + 2 * textpad;
 			if (tw > ew)
 				drw_text(drw, x, 0, ew, m->bh, textpad, c->name, 0, 0);
 			else
 				drw_text(drw, x, 0, ew, m->bh, (ew - tw) / 2 + textpad, c->name, 0, 0);
-			if (c->isalwaysontop)
-				drw_rect(drw, x + 1, 1, 4, 4, 0, 0);
 			x += ew;
 		}
 		w -= (w / n) * n;
@@ -900,7 +914,6 @@ void motionnotify(XEvent *e) {
 }
 
 void focus(Client* c) {
-
 	if (!c || !ISVISIBLE(c))
 		for (c = selmon->stack; c && !ISVISIBLE(c); c = c->snext);
 	if (selmon->sel && selmon->sel != c)
@@ -923,8 +936,12 @@ void focus(Client* c) {
 	drawbars();
 }
 
-/* there are some broken focus acquiring clients needing extra handling */
+void focusclient(const Arg* arg) {
+	if (arg->v) focus((Client*)arg->v);
+}
+
 void focusin(XEvent* e) {
+	/* there are some broken focus acquiring clients needing extra handling */
 	XFocusChangeEvent* ev = &e->xfocus;
 	if (selmon->sel && ev->window != selmon->sel->win)
 		setfocus(selmon->sel);
@@ -1930,8 +1947,10 @@ void tile(Monitor* m) {
 	nm = m->nmaster > n ? n : m->nmaster;
 	my = m->wy;
 	wy = m->wy;
-	if (n != nm) wh = (m->wh + m->gappx) / (n - nm);
-	if (nm != 0) mh = (m->wh + m->gappx) / nm;
+	wh = (m->wh + m->gappx);
+	if (n != nm) wh /= n - nm;
+	mh = (m->wh + m->gappx);
+	if (nm != 0) mh /= nm;
 	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), ++i) {
 		if (i < nm) {
 			resize(c, m->wx, my, m->ww * m->mfact - m->gappx - 2 * c->bw, mh - m->gappx - 2 * c->bw, 0);
@@ -1998,7 +2017,7 @@ void togglebar(const Arg* arg) {
 void togglefloating(const Arg* arg) {
 	if (!selmon->sel)
 		return;
-	selmon->sel->isfloating = !selmon->sel->isfloating || selmon->sel->isfixed;
+	// selmon->sel->isfloating = !selmon->sel->isfloating || selmon->sel->isfixed;
 	if (selmon->sel->isfloating)
 		resize(selmon->sel, selmon->sel->x, selmon->sel->y,
 			selmon->sel->w, selmon->sel->h, 0);
@@ -2452,7 +2471,6 @@ void xinitvisual() {
 
 void zoom(const Arg* arg) {
 	Client* c = selmon->sel;
-
 	if (!selmon->lt[selmon->sellt]->arrange || !c || c->isfloating)
 		return;
 	if (c == nexttiled(selmon->clients) && !(c = nexttiled(c->next)))
