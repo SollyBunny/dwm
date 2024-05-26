@@ -941,7 +941,7 @@ void focus(Client* c) {
 }
 
 void focusclient(const Arg* arg) {
-	if (arg) focus((Client*)arg->v);
+	if (arg && arg->v) focus((Client*)arg->v);
 }
 
 void focusin(XEvent* e) {
@@ -1182,7 +1182,7 @@ void keypress(XEvent* e) {
 
 	ev = &e->xkey;
 	// keysym = XKeycodeToKeysym(dpy, (KeyCode)ev->keycode, 0);
-	keysym = XkbKeycodeToKeysym(dpy, (KeyCode)ev->keycode, 0, (KeyCode)ev->state & ShiftMask ? 1 : 0);
+	keysym = XkbKeycodeToKeysym(dpy, (KeyCode)ev->keycode, 0, 0);
 	for (i = 0; i < LENGTH(keys); i++)
 		if (keysym == keys[i].keysym
 			&& CLEANMASK(keys[i].mod) == CLEANMASK(ev->state)
@@ -1192,7 +1192,7 @@ void keypress(XEvent* e) {
 
 void killclient(const Arg* arg) {
 	Client *c;
-	if (arg)
+	if (arg && arg->v)
 		c = (Client*)arg->v;
 	else if (selmon->sel)
 		c = selmon->sel;
@@ -2022,7 +2022,7 @@ void togglebar(const Arg* arg) {
 
 void togglefloating(const Arg* arg) {
 	Client *c;
-	if (arg)
+	if (arg && arg->v)
 		c = (Client*)arg->v;
 	else if (selmon->sel)
 		c = selmon->sel;
@@ -2038,7 +2038,7 @@ void togglefloating(const Arg* arg) {
 
 void togglealwaysontop(const Arg* arg) {
 	Client *c, *d;
-	if (arg)
+	if (arg && arg->v)
 		c = (Client*)arg->v;
 	else if (selmon->sel)
 		c = selmon->sel;

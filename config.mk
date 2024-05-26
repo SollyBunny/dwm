@@ -26,8 +26,7 @@ INCS = -I${X11INC} -I${FREETYPEINC} `pkg-config --cflags-only-I xft pango pangox
 LIBS = -L${X11LIB} -lX11 ${XINERAMALIBS} ${FREETYPELIBS} `pkg-config --libs xft pango pangoxft` -lXrender -lImlib2
 
 # flags
-DEBUGFLAGS = -O0 -g -fsanitize=address -fno-omit-frame-pointer
-# CPPFLAGS = -D_DEFAULT_SOURCE -D_BSD_SOURCE -D_XOPEN_SOURCE=700L -DVERSION=\"${VERSION}\" ${XINERAMAFLAGS}
+# DEBUGFLAGS = -O0 -g -fsanitize=address -fno-omit-frame-pointer
 CFLAGS   = -std=c99 -D_POSIX_C_SOURCE=200809 -pedantic -Wall -O4 ${INCS} -DVERSION=\"${VERSION}\" ${XINERAMAFLAGS} ${DEBUGFLAGS}
 LDFLAGS  = ${LIBS} ${DEBUGFLAGS}
 

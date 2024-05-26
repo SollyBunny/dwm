@@ -119,44 +119,44 @@ static const char *const autostart[] = {
 
 #define MODKEY Mod4Mask
 #define BINDTAG(n) \
-	{ MODKEY,                       XK_##n,    view,              { .ui = 1 << (n - 1)          } }, \
-	{ MODKEY|ShiftMask,             XK_##n,    tag,               { .ui = 1 << (n - 1)          } }, \
-	{ MODKEY|ControlMask,           XK_##n,    toggleview,        { .ui = 1 << (n - 1)          } }, \
-	{ MODKEY|ShiftMask|ControlMask, XK_##n,    toggletag,         { .ui = 1 << (n - 1)          } },
+	{ MODKEY,                       XK_##n,     view,              { .ui = 1 << (n - 1)          } }, \
+	{ MODKEY|ShiftMask,             XK_##n,     tag,               { .ui = 1 << (n - 1)          } }, \
+	{ MODKEY|ControlMask,           XK_##n,     toggleview,        { .ui = 1 << (n - 1)          } }, \
+	{ MODKEY|ShiftMask|ControlMask, XK_##n,     toggletag,         { .ui = 1 << (n - 1)          } },
 static const Key keys[] = {
 	BINDTAG(1) BINDTAG(2) BINDTAG(3) BINDTAG(4) BINDTAG(5) BINDTAG(6) BINDTAG(7) BINDTAG(8) BINDTAG(9)
-	/* modifier                     key        function           argument */
-	{ MODKEY,		                XK_t,	   spawn,         	  { .v = termcmd                } },
-	{ MODKEY,		                XK_r,	   spawn,         	  { .v = dmenucmd               } },
+	/* modifier                     key         function           argument */
+	{ MODKEY,		                XK_t,	    spawn,         	   { .v = termcmd                } },
+	{ MODKEY,		                XK_r,	    spawn,         	   { .v = dmenucmd               } },
 
-	{ MODKEY,				        XK_Print,  spawn,			  { .v = screenallcmd           } },
-	{ 0,					        XK_Print,  spawn,			  { .v = screencmd              } },
+	{ MODKEY,				        XK_Print,   spawn,			   { .v = screenallcmd           } },
+	{ 0,					        XK_Print,   spawn,			   { .v = screencmd              } },
 
-	{ MODKEY|ControlMask,           XK_Delete, quit,              { 0 			                } },
-	{ MODKEY,             	        XK_F4,     killclient,        { 0                           } },
-	{ MODKEY|ShiftMask,	            XK_F4,     spawn,			  { .v = xkillcmd               } },
+	{ MODKEY|ControlMask,           XK_Delete,  quit,              { 0 			                 } },
+	{ MODKEY,             	        XK_F4,      killclient,        { 0                           } },
+	{ MODKEY|ShiftMask,	            XK_F4,      spawn,			   { .v = xkillcmd               } },
 
-	{ 0,                            XK_Super_L, start_alt_tab,    { 0                           } },
-	{ MODKEY,                       XK_Tab,    alt_tab,           { 0                           } },
+	{ 0,                            XK_Super_L, start_alt_tab,     { 0                           } },
+	{ MODKEY,                       XK_Tab,     alt_tab,           { 0                           } },
 	
-	{ MODKEY,                       XK_space,  togglealwaysontop, { .ui = 0                     } },
-	{ MODKEY|ShiftMask,             XK_space,  togglealwaysontop, { .ui = 1                     } },
+	{ MODKEY,                       XK_space,   togglealwaysontop, { .ui = 0                     } },
+	{ MODKEY|ShiftMask,             XK_space,   togglealwaysontop, { .ui = 1                     } },
 
-	{ MODKEY,                       XK_q,      moveresizetile,    { .ui = TileNW                } },
-	{ MODKEY,                       XK_a,      moveresizetile,    { .ui = TileW                 } },
-	{ MODKEY,                       XK_z,      moveresizetile,    { .ui = TileSW                } },
+	{ MODKEY,                       XK_q,       moveresizetile,    { .ui = TileNW                } },
+	{ MODKEY,                       XK_a,       moveresizetile,    { .ui = TileW                 } },
+	{ MODKEY,                       XK_z,       moveresizetile,    { .ui = TileSW                } },
 
-	{ MODKEY,                       XK_w,      moveresizetile,    { .ui = TileN                 } },
-	{ MODKEY,                       XK_s,      moveresizetile,    { .ui = TileFill              } },
-	{ MODKEY,                       XK_x,      moveresizetile,    { .ui = TileS                 } },
+	{ MODKEY,                       XK_w,       moveresizetile,    { .ui = TileN                 } },
+	{ MODKEY,                       XK_s,       moveresizetile,    { .ui = TileFill              } },
+	{ MODKEY,                       XK_x,       moveresizetile,    { .ui = TileS                 } },
         
-	{ MODKEY,                       XK_e,      moveresizetile,    { .ui = TileNE                } },
-	{ MODKEY,                       XK_d,      moveresizetile,    { .ui = TileE                 } },
-	{ MODKEY,                       XK_c,      moveresizetile,    { .ui = TileSE                } },
+	{ MODKEY,                       XK_e,       moveresizetile,    { .ui = TileNE                } },
+	{ MODKEY,                       XK_d,       moveresizetile,    { .ui = TileE                 } },
+	{ MODKEY,                       XK_c,       moveresizetile,    { .ui = TileSE                } },
 
-	{ MODKEY|ShiftMask,             XK_s,      moveresizetile,    { .ui = TileFullscreen        } },
-	{ MODKEY|ControlMask,           XK_s,      moveresizetile,    { .ui = TileCenter            } },
-	{ MODKEY|ControlMask|ShiftMask, XK_s,      moveresizetile,    { .ui = TileDoubleFullscreen  } },
+	{ MODKEY|ShiftMask,             XK_s,       moveresizetile,    { .ui = TileFullscreen        } },
+	{ MODKEY|ControlMask,           XK_s,       moveresizetile,    { .ui = TileCenter            } },
+	{ MODKEY|ControlMask|ShiftMask, XK_s,       moveresizetile,    { .ui = TileDoubleFullscreen  } },
 
 };
 
@@ -164,21 +164,21 @@ static const Key keys[] = {
 /* click can be ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle, ClkClientWin, or ClkRootWin */
 static const Button buttons[] = {
 	/* click                event mask      button          function        argument */
-	{ ClkLtSymbol,          0,              Button1,        inclayout,      { .i =  1 } },
+	{ ClkLtSymbol,          0,              Button1,        inclayout,      { .i =  1          } },
 	{ ClkLtSymbol,          0,              Button2,        setlayout,      { .v = &layouts[0] } },
-	{ ClkLtSymbol,          0,              Button3,        inclayout,      { .i = -1 } },
-	{ ClkWinTitle,          0,              Button1,        focusclient,    {0} },
-	{ ClkWinTitle,          0,              Button2,        togglefloating, {0} },
-	{ ClkWinTitle,          0,              Button3,        killclient,     {0} },
-	{ ClkStatusText,        0,              Button1,        spawn,          { .v = termcmd } },
-	{ ClkStatusText,        0,              Button2,        spawn,          { .v = termcmd } },
-	{ ClkStatusText,        0,              Button3,        spawn,          { .v = termcmd } },
-	{ ClkClientWin,         MODKEY,         Button1,        movemouse,      {0} },
-	{ ClkClientWin,         MODKEY,         Button2,        togglefloating, {0} },
-	{ ClkClientWin,         MODKEY,         Button3,        resizemouse,    {0} },
-	{ ClkTagBar,            0,              Button1,        view,           {0} },
-	{ ClkTagBar,            0,              Button3,        toggleview,     {0} },
-	{ ClkTagBar,            MODKEY,         Button1,        tag,            {0} },
-	{ ClkTagBar,            MODKEY,         Button3,        toggletag,      {0} },
+	{ ClkLtSymbol,          0,              Button3,        inclayout,      { .i = -1          } },
+	{ ClkWinTitle,          0,              Button1,        focusclient,    { 0                } },
+	{ ClkWinTitle,          0,              Button2,        togglefloating, { 0                } },
+	{ ClkWinTitle,          0,              Button3,        killclient,     { 0                } },
+	{ ClkStatusText,        0,              Button1,        spawn,          { .v = termcmd     } },
+	{ ClkStatusText,        0,              Button2,        spawn,          { .v = termcmd     } },
+	{ ClkStatusText,        0,              Button3,        spawn,          { .v = termcmd     } },
+	{ ClkClientWin,         MODKEY,         Button1,        movemouse,      { 0                } },
+	{ ClkClientWin,         MODKEY,         Button2,        togglefloating, { 0                } },
+	{ ClkClientWin,         MODKEY,         Button3,        resizemouse,    { 0                } },
+	{ ClkTagBar,            0,              Button1,        view,           { 0                } },
+	{ ClkTagBar,            0,              Button3,        toggleview,     { 0                } },
+	{ ClkTagBar,            MODKEY,         Button1,        tag,            { 0                } },
+	{ ClkTagBar,            MODKEY,         Button3,        toggletag,      { 0                } },
 };
 
