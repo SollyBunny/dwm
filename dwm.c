@@ -29,15 +29,18 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+
 #include <X11/cursorfont.h>
 #include <X11/keysym.h>
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
 #include <X11/Xproto.h>
 #include <X11/Xutil.h>
+#include <X11/XKBlib.h>
 #ifdef XINERAMA
 #include <X11/extensions/Xinerama.h>
 #endif /* XINERAMA */
@@ -679,6 +682,7 @@ Monitor* createmon(void) {
 	m->showbar = showbar;
 	m->topbar = topbar;
 	m->gappx = gappx;
+	m->bh = bh;
 	m->lt[0] = &layouts[0];
 	m->lt[1] = &layouts[1 % LENGTH(layouts)];
 	return m;
@@ -937,7 +941,7 @@ void focus(Client* c) {
 }
 
 void focusclient(const Arg* arg) {
-	if (arg->v) focus((Client*)arg->v);
+	if (arg) focus((Client*)arg->v);
 }
 
 void focusin(XEvent* e) {
@@ -1136,22 +1140,18 @@ void grabkeys(void) {
 }
 
 void inclayout(const Arg* arg) {
-	// NOTE: WTF IS GOING ON WITH mon->sellt!? You can switch between 2 places to store your layout, but why? There's no "undo" capability and even if there was I would never use it.. minimal code my ass
-	// TODO: remove mon->sellt, add mon->oldlt. create a function to set lt with Layout*
 	int n = arg->i;
 	for (int i = 0; i < abs(n); ++i) {
 		if (n < 0) {
-			if (selmon->lt[selmon->sellt] == layouts) {
+			if (selmon->lt[selmon->sellt] == layouts)
 				selmon->lt[selmon->sellt] = layouts + LENGTH(layouts) - 1;
-			} else {
+			else
 				--selmon->lt[selmon->sellt];
-			}
 		} else {
-			if (selmon->lt[selmon->sellt] == layouts + LENGTH(layouts) - 1) {
+			if (selmon->lt[selmon->sellt] == layouts + LENGTH(layouts) - 1)
 				selmon->lt[selmon->sellt] = layouts;
-			} else {
+			else
 				++selmon->lt[selmon->sellt];
-			}
 		}
 	}
 	if (selmon->sel)
@@ -1181,7 +1181,8 @@ void keypress(XEvent* e) {
 	XKeyEvent* ev;
 
 	ev = &e->xkey;
-	keysym = XKeycodeToKeysym(dpy, (KeyCode)ev->keycode, 0);
+	// keysym = XKeycodeToKeysym(dpy, (KeyCode)ev->keycode, 0);
+	keysym = XkbKeycodeToKeysym(dpy, (KeyCode)ev->keycode, 0, (KeyCode)ev->state & ShiftMask ? 1 : 0);
 	for (i = 0; i < LENGTH(keys); i++)
 		if (keysym == keys[i].keysym
 			&& CLEANMASK(keys[i].mod) == CLEANMASK(ev->state)
@@ -1190,13 +1191,18 @@ void keypress(XEvent* e) {
 }
 
 void killclient(const Arg* arg) {
-	if (!selmon->sel)
+	Client *c;
+	if (arg)
+		c = (Client*)arg->v;
+	else if (selmon->sel)
+		c = selmon->sel;
+	else
 		return;
-	if (!sendevent(selmon->sel, wmatom[WMDelete])) {
+	if (!sendevent(c, wmatom[WMDelete])) {
 		XGrabServer(dpy);
 		XSetErrorHandler(xerrordummy);
 		XSetCloseDownMode(dpy, DestroyAll);
-		XKillClient(dpy, selmon->sel->win);
+		XKillClient(dpy, c->win);
 		XSync(dpy, False);
 		XSetErrorHandler(xerror);
 		XUngrabServer(dpy);
@@ -1355,26 +1361,26 @@ void moveresizetile(const Arg* arg) {
 	case TileNW:
 		x = 0;
 		y = 0;
-		w = mw / 2 - gappx / 2;
-		h = mh / 2 - gappx / 2;
+		w = mw / 2 - m->gappx / 2;
+		h = mh / 2 - m->gappx / 2;
 		break;
 	case TileW:
 		x = 0;
 		y = 0;
-		w = mw / 2 - gappx / 2;
+		w = mw / 2 - m->gappx / 2;
 		h = mh;
 		break;
 	case TileSW:
 		x = 0;
-		y = mh / 2 + gappx / 2;
-		w = mw / 2 - gappx / 2;
-		h = mh / 2 - gappx / 2;
+		y = mh / 2 + m->gappx / 2;
+		w = mw / 2 - m->gappx / 2;
+		h = mh / 2 - m->gappx / 2;
 		break;
 	case TileN:
 		x = 0;
 		y = 0;
 		w = mw;
-		h = mh / 2 - gappx / 2;
+		h = mh / 2 - m->gappx / 2;
 		break;
 	case TileFill:
 		x = 0;
@@ -1384,33 +1390,33 @@ void moveresizetile(const Arg* arg) {
 		break;
 	case TileS:
 		x = 0;
-		y = mh / 2 + gappx / 2;
+		y = mh / 2 + m->gappx / 2;
 		w = mw;
-		h = mh / 2 - gappx / 2;
+		h = mh / 2 - m->gappx / 2;
 		break;
 	case TileNE:
-		x = mw / 2 + gappx / 2;
+		x = mw / 2 + m->gappx / 2;
 		y = 0;
-		w = mw / 2 - gappx / 2;
-		h = mh / 2 - gappx / 2;
+		w = mw / 2 - m->gappx / 2;
+		h = mh / 2 - m->gappx / 2;
 		break;
 	case TileE:
-		x = mw / 2 + gappx / 2;
+		x = mw / 2 + m->gappx / 2;
 		y = 0;
-		w = mw / 2 - gappx / 2;
+		w = mw / 2 - m->gappx / 2;
 		h = mh;
 		break;
 	case TileSE:
-		x = mw / 2 + gappx / 2;
-		y = mh / 2 + gappx / 2;
-		w = mw / 2 - gappx / 2;
-		h = mh / 2 - gappx / 2;
+		x = mw / 2 + m->gappx / 2;
+		y = mh / 2 + m->gappx / 2;
+		w = mw / 2 - m->gappx / 2;
+		h = mh / 2 - m->gappx / 2;
 		break;
 	case TileCenter:
-		x = mw / 2 - (mw / 2 - gappx / 2) / 2;
-		y = mh / 2 - (mh / 2 - gappx / 2) / 2;
-		w = mw / 2 - gappx / 2;
-		h = mh / 2 - gappx / 2;
+		x = mw / 2 - (mw / 2 - m->gappx / 2) / 2;
+		y = mh / 2 - (mh / 2 - m->gappx / 2) / 2;
+		w = mw / 2 - m->gappx / 2;
+		h = mh / 2 - m->gappx / 2;
 		break;
 	case TileFullscreen:
 		x = -m->wx;
@@ -1987,10 +1993,10 @@ void col(Monitor* m) {
 	
 	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), ++i) {
 		if (i < nm) {
-			resize(c, x, y, mw - gappx - 2 * c->bw, h - 2 * c->bw, 0);
+			resize(c, x, y, mw - m->gappx - 2 * c->bw, h - 2 * c->bw, 0);
 			x += mw;
 		} else {
-			resize(c, x, y, ww - gappx - 2 * c->bw, h - 2 * c->bw, 0);
+			resize(c, x, y, ww - m->gappx - 2 * c->bw, h - 2 * c->bw, 0);
 			x += ww;
 		}
 	}
@@ -2015,34 +2021,40 @@ void togglebar(const Arg* arg) {
 }
 
 void togglefloating(const Arg* arg) {
-	if (!selmon->sel)
-		return;
-	// selmon->sel->isfloating = !selmon->sel->isfloating || selmon->sel->isfixed;
-	if (selmon->sel->isfloating)
-		resize(selmon->sel, selmon->sel->x, selmon->sel->y,
-			selmon->sel->w, selmon->sel->h, 0);
+	Client *c;
+	if (arg)
+		c = (Client*)arg->v;
+	else if (selmon->sel)
+		c = selmon->sel;
 	else
-		selmon->sel->isalwaysontop = 0; /* disabled, turn this off too */
-	arrange(selmon);
+		return;
+	c->isfloating = !c->isfloating || c->isfixed;
+	if (c->isfloating)
+		resize(c, c->x, c->y, c->w, c->h, 0);
+	else
+		c->isalwaysontop = 0; /* disabled, turn this off too */
+	arrange(c->mon);
 }
 
 void togglealwaysontop(const Arg* arg) {
-	Client* c;
-	if (!selmon->sel)
+	Client *c, *d;
+	if (arg)
+		c = (Client*)arg->v;
+	else if (selmon->sel)
+		c = selmon->sel;
+	else
 		return;
-	if (selmon->sel->isalwaysontop) {
-		selmon->sel->isalwaysontop = 0;
+	if (c->isalwaysontop) {
+		c->isalwaysontop = 0;
 	} else {
 		if (arg->ui == 1) {
-			for (c = selmon->clients; c; c = c->next) {
-				c->isalwaysontop = 0;
-			}
+			for (d = c; d; d = d->next)
+				d->isalwaysontop = 0;
 		}
-		/* turn on, make it float too */
-		selmon->sel->isfloating = 1;
-		selmon->sel->isalwaysontop = 1;
+		// c->isfloating = 1; // make it float too
+		c->isalwaysontop = 1;
 	}
-	arrange(selmon);
+	arrange(c->mon);
 }
 
 void toggletag(const Arg* arg) {
@@ -2143,25 +2155,25 @@ void updatebars(void) {
 }
 
 void updatebarpos(Monitor* m) {
-	m->wx = m->mx + gappx;
+	m->wx = m->mx + m->gappx;
 	if (!m->showbar) {
-		m->wy = m->my + gappx;
+		m->wy = m->my + m->gappx;
 		m->ww = m->mw - 2 * m->gappx;
 		m->wh = m->mh - 2 * m->gappx;
-		m->bx = m->by = m->bw = m->bh = 0;
+		m->bx = m->bw = 0;
+		m->by = -m->bh;
 		return;
 	}
-	m->bw = m->mw - 2 * gappx;
-	m->bh = bh;
-	m->bx = m->mx + gappx;
-	m->ww = m->mw - 2 * gappx;
-	m->wh = m->mh - m->bh - 3 * gappx;
+	m->bw = m->mw - 2 * m->gappx;
+	m->bx = m->mx + m->gappx;
+	m->ww = m->mw - 2 * m->gappx;
+	m->wh = m->mh - m->bh - 3 * m->gappx;
 	if (m->topbar) {
-		m->wy = m->my + m->bh + 2 * gappx;
-		m->by = m->my + gappx;
+		m->wy = m->my + m->bh + 2 * m->gappx;
+		m->by = m->my + m->gappx;
 	} else {
-		m->wy = m->my + gappx;
-		m->by = m->my + m->mh - m->bh - gappx;
+		m->wy = m->my + m->gappx;
+		m->by = m->my + m->mh - m->bh - m->gappx;
 	}
 }
 

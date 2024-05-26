@@ -2,8 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <X11/Xlib.h>
 #include <X11/Xft/Xft.h>
+
 #include <Imlib2.h>
 #include <pango/pango.h>
 #include <pango/pangoxft.h>
@@ -211,7 +213,7 @@ void drw_rect(Drw *drw, int x, int y, unsigned int w, unsigned int h, int filled
 int drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lpad, const char *text, int invert, Bool markup) {
 	char buf[1024];
 	int i, ty, th;
-	unsigned int ew, eh;
+	unsigned int ew = 0, eh = 0;
 	XftDraw *d = NULL;
 	size_t len;
 	int render = x || y || w || h;

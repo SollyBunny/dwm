@@ -75,10 +75,10 @@ static void alt_tab(const Arg *arg) {
 }
 
 /* layout(s) */
-static const float mfact     = 0.55; /* factor of master area size [0.05..0.95] */
-static const int nmaster     = 1;    /* number of clients in master area */
-static const int resizehints = 1;    /* 1 means respect size hints in tiled resizals */
-static const int lockfullscreen = 0; /* 1 will force focus on the fullscreen window */
+static const float mfact        = 0.55; /* factor of master area size [0.05..0.95] */
+static const int nmaster        = 1;    /* number of clients in master area */
+static const int resizehints    = 1;    /* 1 means respect size hints in tiled resizals */
+static const int lockfullscreen = 0;    /* 1 will force focus on the fullscreen window */
 
 static const Layout layouts[] = {
 	/* symbol     arrange function */
@@ -119,9 +119,10 @@ static const char *const autostart[] = {
 
 #define MODKEY Mod4Mask
 #define BINDTAG(n) \
-	{ MODKEY,                       XK_##n,     view,              { .ui = 1 << (n - 1)          } }, \
-	{ MODKEY|ShiftMask,             XK_##n,     tag,               { .ui = 1 << (n - 1)          } }, \
-	{ MODKEY|ControlMask,           XK_##n,     toggletag,         { .ui = 1 << (n - 1)          } },
+	{ MODKEY,                       XK_##n,    view,              { .ui = 1 << (n - 1)          } }, \
+	{ MODKEY|ShiftMask,             XK_##n,    tag,               { .ui = 1 << (n - 1)          } }, \
+	{ MODKEY|ControlMask,           XK_##n,    toggleview,        { .ui = 1 << (n - 1)          } }, \
+	{ MODKEY|ShiftMask|ControlMask, XK_##n,    toggletag,         { .ui = 1 << (n - 1)          } },
 static const Key keys[] = {
 	BINDTAG(1) BINDTAG(2) BINDTAG(3) BINDTAG(4) BINDTAG(5) BINDTAG(6) BINDTAG(7) BINDTAG(8) BINDTAG(9)
 	/* modifier                     key        function           argument */
@@ -167,7 +168,8 @@ static const Button buttons[] = {
 	{ ClkLtSymbol,          0,              Button2,        setlayout,      { .v = &layouts[0] } },
 	{ ClkLtSymbol,          0,              Button3,        inclayout,      { .i = -1 } },
 	{ ClkWinTitle,          0,              Button1,        focusclient,    {0} },
-	{ ClkWinTitle,          0,              Button2,        killclient,     {0} },
+	{ ClkWinTitle,          0,              Button2,        togglefloating, {0} },
+	{ ClkWinTitle,          0,              Button3,        killclient,     {0} },
 	{ ClkStatusText,        0,              Button1,        spawn,          { .v = termcmd } },
 	{ ClkStatusText,        0,              Button2,        spawn,          { .v = termcmd } },
 	{ ClkStatusText,        0,              Button3,        spawn,          { .v = termcmd } },
