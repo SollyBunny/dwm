@@ -203,6 +203,7 @@ static long getstate(Window w);
 static int gettextprop(Window w, Atom atom, char* text, unsigned int size);
 static void grabbuttons(Client* c, int focused);
 static void grabkeys(void);
+static void grid(Monitor* m);
 static void inclayout(const Arg* arg);
 static void incnmaster(const Arg* arg);
 static void keypress(XEvent* e);
@@ -1967,6 +1968,75 @@ void col(Monitor* m) {
 			x += ww;
 		}
 	}
+}
+void grid(Monitor* m) {
+	unsigned int tilex, tiley, n, x, y, ww, wh, w, h, i;
+	Client* c;
+
+	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), ++n);
+	if (n == 0)
+		return;
+
+	if (n == 1) {
+		c = nexttiled(m->clients);
+		resize(c, m->wx, m->wy, m->ww - 2 * c->bw, m->wh - 2 * c->bw, 0);
+		return;
+	}
+
+    unsigned int a = 1;
+	while (1) {
+		if (a * a >= n) {
+			tilex = tiley = a;
+			break;
+		}
+		if (a * (a + 1) >= n) {
+			if (m->ww > m->wh) {
+				tilex = a + 1;
+				tiley = a;
+			} else {
+				tilex = a;
+				tiley = a + 1;
+			}
+			break;
+		}
+		++a;
+	}
+
+	ww = m->ww / tilex;
+	wh = m->wh / tiley;
+	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), ++i) {
+		x = i % tilex;
+		y = i / tilex;
+		w = ww;
+		h = wh;
+		if (tilex > 1) {
+			if (x == 0) {
+				x = m->wx + ww * x;
+				w -= m->gappx / 2;
+			} else if (x == tilex - 1) {
+				x = m->wx + ww * x + m->gappx / 2;
+				w -= m->gappx / 2;
+			} else {
+				x = m->wx + ww * x + m->gappx / 2;
+				w -= m->gappx;
+			}
+		} else x = m->wx + ww * x;
+		if (tiley > 1) {
+			if (y == 0) {
+				y = m->wy + wh * y;
+				h -= m->gappx / 2;
+			} else if (y == tiley - 1) {
+				y = m->wy + wh * y + m->gappx / 2;
+				h -= m->gappx / 2;
+			} else {
+				y = m->wy + wh * y + m->gappx / 2;
+				h -= m->gappx;
+			}
+		} else y = m->wy + wh * y;
+		printf("%d: %d %d %d %d\n", i, x, y, w, h);
+		resize(c, x, y, w, h, 0);
+	}
+
 }
 
 void monocle(Monitor* m) {
