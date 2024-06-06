@@ -142,7 +142,6 @@ struct Monitor {
 	int mx, my, mw, mh;   /* screen size */
 	int wx, wy, ww, wh;   /* window area  */
 	int gappx;            /* gaps between windows */
-	int restacking;       /* whether the monitor is being restacked */
 	unsigned int seltags;
 	unsigned int sellt;
 	unsigned int tagset[2];
@@ -308,7 +307,6 @@ static Window root, wmcheckwin;
 
 static int useargb = 0;
 static int bh;
-static int restacking = 0;
 static Visual* visual;
 static int depth;
 static Colormap cmap;
@@ -791,8 +789,6 @@ void drawbar(Monitor* m) {
 	int x = 0, w, tw = 0, ew = 0;
 	unsigned int i, n;
 	Client* c;
-	if (m->restacking)
-		return;
 
 	if (!m->showbar)
 		return;
@@ -871,11 +867,8 @@ void drawbar(Monitor* m) {
 
 void drawbars(void) {
 	Monitor* m;
-	if (restacking) return;
-	restacking = 1;
 	for (m = mons; m; m = m->next)
 		drawbar(m);
-	restacking = 0;
 }
 
 void enternotify(XEvent *e) {
@@ -1433,6 +1426,7 @@ void moveresizetile(const Arg* arg) {
 	}
 	x += m->wx;
 	y += m->wy;
+	c->isfloating = 0;
 	resize(c, x, y, w, h, 1);
 }
 
@@ -1537,6 +1531,7 @@ void resizemouse(const Arg* arg) {
 	Time lasttime = 0;
 	if (!(c = selmon->sel))
 		return;
+	c->isfloating = 1;
 	restack(selmon);
 	ocx = c->x;
 	ocy = c->y;
@@ -1583,41 +1578,18 @@ void resizemouse(const Arg* arg) {
 void restack(Monitor* m) {
 	Client* c;
 	XEvent ev;
-	XWindowChanges wc;
 
-	if (m->restacking)
-		return;
-	if (!m->sel)
-		return;
+	if (!m->sel) return;
 
-	m->restacking = 1;
-
-	if (m->sel->isfloating || !m->lt[m->sellt]->arrange)
+	if (ISVISIBLE(m->sel))
 		XRaiseWindow(dpy, m->sel->win);
-
-	/* raise the aot window */
-	for (Monitor* m_search = mons; m_search; m_search = m_search->next) {
-		for (c = m_search->clients; c; c = c->next) {
-			if (c->isalwaysontop) {
-				XRaiseWindow(dpy, c->win);
-			}
-		}
-	}
-
-	if (m->lt[m->sellt]->arrange) {
-		wc.stack_mode = Below;
-		wc.sibling = m->barwin;
-		for (c = m->stack; c; c = c->snext)
-			if (!c->isfloating && ISVISIBLE(c)) {
-				XConfigureWindow(dpy, c->win, CWSibling | CWStackMode, &wc);
-				wc.sibling = c->win;
-			}
-	}
+	for (c = m->stack; c; c = c->snext)
+		if (ISVISIBLE(c) && c->isalwaysontop)
+			XRaiseWindow(dpy, c->win);
 
 	XSync(dpy, False);
 	while (XCheckMaskEvent(dpy, EnterWindowMask, &ev)) {}
 
-	m->restacking = 0;
 	drawbar(m);
 }
 
@@ -1634,10 +1606,7 @@ void scan(void) {
 	unsigned int i, num;
 	Window d1, d2, * wins = NULL;
 	XWindowAttributes wa;
-	Monitor* m;
 	if (!XQueryTree(dpy, root, &d1, &d2, &wins, &num)) return;
-	for (m = mons; m; m = m->next) m->restacking = 1;
-	restacking = 1;
 	for (i = 0; i < num; i++) {
 		if (!XGetWindowAttributes(dpy, wins[i], &wa)
 			|| wa.override_redirect || XGetTransientForHint(dpy, wins[i], &d1))
@@ -1654,8 +1623,6 @@ void scan(void) {
 	}
 	if (wins)
 		XFree(wins);
-	for (m = mons; m; m = m->next) m->restacking = 0;
-	restacking = 0;
 	drawbars();
 }
 

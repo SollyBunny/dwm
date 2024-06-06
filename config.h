@@ -45,7 +45,6 @@ static const Rule rules[] = {
 
 /* alt tab */
 static int alt_tab_count = 0;
-static void focus_restack(Client *c) { if (c) { focus(c); restack(selmon); } }
 static void start_alt_tab(const Arg *arg) { alt_tab_count = 0; }
 static Client *next_visible(Client *c) {
 	for(/* DO_NOTHING */; c && !ISVISIBLE(c); c = c->snext);
@@ -61,17 +60,22 @@ static Client *get_nth_client(int n) {
 	for (c = next_visible(selmon->stack); c && n--; c = next_visible(c->snext));
 	return c;
 }
+
 static void alt_tab(const Arg *arg) {
-	if (!selmon) return;
-	if (selmon->restacking) return;
-	selmon->restacking = 1;
-	for (int i = 0; i < alt_tab_count; ++i) focus_restack(get_nth_client(alt_tab_count));
+	// put all of the windows back in their original focus/stack position */
+	Client *c;
 	int visible = count_visible();
 	if (visible == 0) return;
+	for (int i = 0; i < alt_tab_count; ++i) {
+		c = get_nth_client(alt_tab_count);
+		detachstack(c);
+		attachstack(c);
+	}
+	// focus and restack the nth window */
 	alt_tab_count = (alt_tab_count + 1) % visible;
-	focus_restack(get_nth_client(alt_tab_count));
-	selmon->restacking = 0;
-	drawbar(selmon);
+	c = get_nth_client(alt_tab_count);
+	focus(c);
+	restack(c->mon);
 }
 
 /* layout(s) */
