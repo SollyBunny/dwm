@@ -27,8 +27,9 @@ LIBS = -L${X11LIB} -lX11 ${XINERAMALIBS} ${FREETYPELIBS} `pkg-config --libs xft 
 
 # flags
 # DEBUGFLAGS = -O0 -g -fsanitize=address -fno-omit-frame-pointer
-CFLAGS   = -std=c99 -D_POSIX_C_SOURCE=200809 -pedantic -Wall -O4 ${INCS} -DVERSION=\"${VERSION}\" ${XINERAMAFLAGS} ${DEBUGFLAGS}
-LDFLAGS  = ${LIBS} ${DEBUGFLAGS}
+RELEASEFLAGS = -O4
+CFLAGS   = -std=c99 -D_POSIX_C_SOURCE=200809 -pedantic -Wall -O4 ${INCS} -DVERSION=\"${VERSION}\" ${XINERAMAFLAGS} ${DEBUGFLAGS} ${RELEASEFLAGS}
+LDFLAGS  = ${LIBS} ${DEBUGFLAGS} ${RELEASEFLAGS}
 
 # Solaris
 #CFLAGS = -fast ${INCS} -DVERSION=\"${VERSION}\"

@@ -980,14 +980,15 @@ void focusstack(const Arg* arg) {
 }
 
 Atom getatomprop(Client* c, Atom prop) {
-	int di;
 	unsigned long dl;
 	unsigned char* p = NULL;
-	Atom da, atom = None;
+	Atom type = None, atom = None;
+	int format = 0;
 
 	if (XGetWindowProperty(dpy, c->win, prop, 0L, sizeof atom, False, XA_ATOM,
-		&da, &di, &dl, &dl, &p) == Success && p) {
-		atom = *(Atom*)p;
+		&type, &format, &dl, &dl, &p) == Success && p) {
+		if (format == 0 && type == XA_ATOM)
+			atom = *(Atom*)p;
 		XFree(p);
 	}
 	return atom;
@@ -1427,7 +1428,7 @@ void moveresizetile(const Arg* arg) {
 	}
 	x += m->wx;
 	y += m->wy;
-	c->isfloating = 0;
+	c->isfloating = 1;
 	resize(c, x, y, w, h, 1);
 }
 
@@ -2033,7 +2034,6 @@ void grid(Monitor* m) {
 				h -= m->gappx;
 			}
 		} else y = m->wy + wh * y;
-		printf("%d: %d %d %d %d\n", i, x, y, w, h);
 		resize(c, x, y, w, h, 0);
 	}
 
