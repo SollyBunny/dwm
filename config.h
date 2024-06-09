@@ -131,9 +131,9 @@ static const char *const autostart[] = {
 static const Key keys[] = {
 	BINDTAG(1) BINDTAG(2) BINDTAG(3) BINDTAG(4) BINDTAG(5) BINDTAG(6) BINDTAG(7) BINDTAG(8) BINDTAG(9)
 	/* modifier                     key         function           argument */
+	
 	{ MODKEY,		                XK_t,	    spawn,         	   { .v = termcmd                } },
 	{ MODKEY,		                XK_r,	    spawn,         	   { .v = dmenucmd               } },
-
 	{ MODKEY,				        XK_Print,   spawn,			   { .v = screenallcmd           } },
 	{ 0,					        XK_Print,   spawn,			   { .v = screencmd              } },
 

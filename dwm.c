@@ -2075,7 +2075,7 @@ void togglefloating(const Arg* arg) {
 
 void togglealwaysontop(const Arg* arg) {
 	Client *c, *d;
-	if (arg && arg->v)
+	if (arg && arg->v && arg->ui != 1)
 		c = (Client*)arg->v;
 	else if (selmon->sel)
 		c = selmon->sel;
@@ -2084,9 +2084,10 @@ void togglealwaysontop(const Arg* arg) {
 	if (c->isalwaysontop) {
 		c->isalwaysontop = 0;
 	} else {
-		if (arg->ui == 1) {
-			for (d = c; d; d = d->next)
-				d->isalwaysontop = 0;
+		if (arg->ui == 1 && c->mon->clients) {
+			for (d = c->mon->clients; d; d = d->next)
+				if (ISVISIBLE(d))
+					d->isalwaysontop = 0;
 		}
 		// c->isfloating = 1; // make it float too
 		c->isalwaysontop = 1;
