@@ -1332,6 +1332,7 @@ void movemouse(const Arg* arg) {
 				handle(&ev);
 				break;
 		}
+		if (!ISVISIBLE(c)) break;
 	} while (ev.type != ButtonRelease);
 	XUngrabPointer(dpy, CurrentTime);
 	if (moved) {
@@ -1567,6 +1568,7 @@ void resizemouse(const Arg* arg) {
 			default:
 				handle(&ev);
 		}
+		if (!ISVISIBLE(c)) break;
 	} while (ev.type != ButtonRelease);
 	XWarpPointer(dpy, None, c->win, 0, 0, 0, 0, c->w + c->bw - 1, c->h + c->bw - 1);
 	XUngrabPointer(dpy, CurrentTime);
