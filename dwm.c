@@ -224,6 +224,7 @@ static void resize(Client* c, int x, int y, int w, int h, int interact);
 static void resizeclient(Client* c, int x, int y, int w, int h);
 static void resizemouse(const Arg* arg);
 static void restack(Monitor* m);
+static void handle(XEvent* ev);
 static void run(void);
 static void scan(void);
 static int sendevent(Client* c, Atom proto);
@@ -303,7 +304,8 @@ static Cur* cursor[CurLast];
 static Clr** scheme;
 static Display* dpy;
 static Drw* drw;
-static Monitor* mons, * selmon;
+static Monitor* mons;
+static Monitor* selmon;
 static Window root, wmcheckwin;
 
 static int useargb = 0;
@@ -348,7 +350,8 @@ static void autostart_exec() {
 /* function implementations */
 
 void applyrules(Client* c) {
-	const char* class, * instance;
+	const char* class;
+	const char* instance;
 	unsigned int i;
 	const Rule* r;
 	Monitor* m;
@@ -473,11 +476,13 @@ void arrangemon(Monitor* m) {
 }
 
 void attach(Client* c) {
+	if (!c) return;
 	c->next = c->mon->clients;
 	c->mon->clients = c;
 }
 
 void attachstack(Client* c) {
+	if (!c) return;
 	c->snext = c->mon->stack;
 	c->mon->stack = c;
 }
@@ -697,14 +702,14 @@ void destroynotify(XEvent* e) {
 
 void detach(Client* c) {
 	Client** tc;
-
+	if (!c) return;
 	for (tc = &c->mon->clients; *tc && *tc != c; tc = &(*tc)->next);
 	*tc = c->next;
 }
 
 void detachstack(Client* c) {
 	Client** tc, * t;
-
+	if (!c) return;
 	for (tc = &c->mon->stack; *tc && *tc != c; tc = &(*tc)->snext);
 	*tc = c->snext;
 
@@ -1298,36 +1303,34 @@ void movemouse(const Arg* arg) {
 	if (!getrootptr(&x, &y))
 		return;
 	do {
-		XMaskEvent(dpy, MOUSEMASK | ExposureMask | SubstructureRedirectMask, &ev);
+		XNextEvent(dpy, &ev);
 		switch (ev.type) {
-		case ConfigureRequest:
-		case Expose:
-		case MapRequest:
-			handler[ev.type](&ev);
-			break;
-		case MotionNotify:
-			if ((ev.xmotion.time - lasttime) <= (1000 / 60))
-				continue;
-			lasttime = ev.xmotion.time;
+			case MotionNotify:
+				if ((ev.xmotion.time - lasttime) <= (1000 / 60))
+					continue;
+				lasttime = ev.xmotion.time;
 
-			nx = ocx + (ev.xmotion.x - x);
-			ny = ocy + (ev.xmotion.y - y);
-			if (abs(selmon->wx - nx) < snap)
-				nx = selmon->wx;
-			else if (abs((selmon->wx + selmon->ww) - (nx + WIDTH(c))) < snap)
-				nx = selmon->wx + selmon->ww - WIDTH(c);
-			if (abs(selmon->wy - ny) < snap)
-				ny = selmon->wy;
-			else if (abs((selmon->wy + selmon->wh) - (ny + HEIGHT(c))) < snap)
-				ny = selmon->wy + selmon->wh - HEIGHT(c);
-			if (!c->isfloating && selmon->lt[selmon->sellt]->arrange
-				&& (abs(nx - c->x) > snap || abs(ny - c->y) > snap))
-				togglefloating(NULL);
-			if (!selmon->lt[selmon->sellt]->arrange || c->isfloating) {
-				resize(c, nx, ny, c->w, c->h, 1);
-				moved = 1;
-			}
-			break;
+				nx = ocx + (ev.xmotion.x - x);
+				ny = ocy + (ev.xmotion.y - y);
+				if (abs(selmon->wx - nx) < snap)
+					nx = selmon->wx;
+				else if (abs((selmon->wx + selmon->ww) - (nx + WIDTH(c))) < snap)
+					nx = selmon->wx + selmon->ww - WIDTH(c);
+				if (abs(selmon->wy - ny) < snap)
+					ny = selmon->wy;
+				else if (abs((selmon->wy + selmon->wh) - (ny + HEIGHT(c))) < snap)
+					ny = selmon->wy + selmon->wh - HEIGHT(c);
+				if (!c->isfloating && selmon->lt[selmon->sellt]->arrange
+					&& (abs(nx - c->x) > snap || abs(ny - c->y) > snap))
+					togglefloating(NULL);
+				if (!selmon->lt[selmon->sellt]->arrange || c->isfloating) {
+					resize(c, nx, ny, c->w, c->h, 1);
+					moved = 1;
+				}
+				break;
+			default:
+				handle(&ev);
+				break;
 		}
 	} while (ev.type != ButtonRelease);
 	XUngrabPointer(dpy, CurrentTime);
@@ -1353,78 +1356,79 @@ void moveresizetile(const Arg* arg) {
 	mh = m->wh;
 	static int x, y, w, h;
 	switch (arg->ui) {
-	case TileNW:
-		x = 0;
-		y = 0;
-		w = mw / 2 - m->gappx / 2;
-		h = mh / 2 - m->gappx / 2;
-		break;
-	case TileW:
-		x = 0;
-		y = 0;
-		w = mw / 2 - m->gappx / 2;
-		h = mh;
-		break;
-	case TileSW:
-		x = 0;
-		y = mh / 2 + m->gappx / 2;
-		w = mw / 2 - m->gappx / 2;
-		h = mh / 2 - m->gappx / 2;
-		break;
-	case TileN:
-		x = 0;
-		y = 0;
-		w = mw;
-		h = mh / 2 - m->gappx / 2;
-		break;
-	case TileFill:
-		x = 0;
-		y = 0;
-		w = mw;
-		h = mh;
-		break;
-	case TileS:
-		x = 0;
-		y = mh / 2 + m->gappx / 2;
-		w = mw;
-		h = mh / 2 - m->gappx / 2;
-		break;
-	case TileNE:
-		x = mw / 2 + m->gappx / 2;
-		y = 0;
-		w = mw / 2 - m->gappx / 2;
-		h = mh / 2 - m->gappx / 2;
-		break;
-	case TileE:
-		x = mw / 2 + m->gappx / 2;
-		y = 0;
-		w = mw / 2 - m->gappx / 2;
-		h = mh;
-		break;
-	case TileSE:
-		x = mw / 2 + m->gappx / 2;
-		y = mh / 2 + m->gappx / 2;
-		w = mw / 2 - m->gappx / 2;
-		h = mh / 2 - m->gappx / 2;
-		break;
-	case TileCenter:
-		x = mw / 2 - (mw / 2 - m->gappx / 2) / 2;
-		y = mh / 2 - (mh / 2 - m->gappx / 2) / 2;
-		w = mw / 2 - m->gappx / 2;
-		h = mh / 2 - m->gappx / 2;
-		break;
-	case TileFullscreen:
-		x = -m->wx;
-		y = -m->wy;
-		w = m->mw;
-		h = m->mh;
-		break;
-	case TileDoubleFullscreen:
-		x = -m->wx - m->mw;
-		y = -m->wy - m->mh;
-		w = m->mw * 2;
-		h = m->mh * 2;
-		break;
+		case TileNW:
+			x = 0;
+			y = 0;
+			w = mw / 2 - m->gappx / 2;
+			h = mh / 2 - m->gappx / 2;
+			break;
+		case TileW:
+			x = 0;
+			y = 0;
+			w = mw / 2 - m->gappx / 2;
+			h = mh;
+			break;
+		case TileSW:
+			x = 0;
+			y = mh / 2 + m->gappx / 2;
+			w = mw / 2 - m->gappx / 2;
+			h = mh / 2 - m->gappx / 2;
+			break;
+		case TileN:
+			x = 0;
+			y = 0;
+			w = mw;
+			h = mh / 2 - m->gappx / 2;
+			break;
+		case TileFill:
+			x = 0;
+			y = 0;
+			w = mw;
+			h = mh;
+			break;
+		case TileS:
+			x = 0;
+			y = mh / 2 + m->gappx / 2;
+			w = mw;
+			h = mh / 2 - m->gappx / 2;
+			break;
+		case TileNE:
+			x = mw / 2 + m->gappx / 2;
+			y = 0;
+			w = mw / 2 - m->gappx / 2;
+			h = mh / 2 - m->gappx / 2;
+			break;
+		case TileE:
+			x = mw / 2 + m->gappx / 2;
+			y = 0;
+			w = mw / 2 - m->gappx / 2;
+			h = mh;
+			break;
+		case TileSE:
+			x = mw / 2 + m->gappx / 2;
+			y = mh / 2 + m->gappx / 2;
+			w = mw / 2 - m->gappx / 2;
+			h = mh / 2 - m->gappx / 2;
+			break;
+		case TileCenter:
+			x = mw / 2 - (mw / 2 - m->gappx / 2) / 2;
+			y = mh / 2 - (mh / 2 - m->gappx / 2) / 2;
+			w = mw / 2 - m->gappx / 2;
+			h = mh / 2 - m->gappx / 2;
+			break;
+		case TileDoubleFullscreen:
+			x = -m->wx - m->mw;
+			y = -m->wy - m->mh;
+			w = m->mw * 2;
+			h = m->mh * 2;
+			break;
+		case TileFullscreen:
+		default:
+			x = -m->wx;
+			y = -m->wy;
+			w = m->mw;
+			h = m->mh;
+			break;
 	}
 	x += m->wx;
 	y += m->wy;
@@ -1455,19 +1459,19 @@ void propertynotify(XEvent* e) {
 		return; /* ignore */
 	else if ((c = wintoclient(ev->window))) {
 		switch (ev->atom) {
-		default: break;
-		case XA_WM_TRANSIENT_FOR:
-			if (!c->isfloating && (XGetTransientForHint(dpy, c->win, &trans)) &&
-				(c->isfloating = (wintoclient(trans)) != NULL))
-				arrange(c->mon);
-			break;
-		case XA_WM_NORMAL_HINTS:
-			c->hintsvalid = 0;
-			break;
-		case XA_WM_HINTS:
-			updatewmhints(c);
-			drawbars();
-			break;
+			default: break;
+			case XA_WM_TRANSIENT_FOR:
+				if (!c->isfloating && (XGetTransientForHint(dpy, c->win, &trans)) &&
+					(c->isfloating = (wintoclient(trans)) != NULL))
+					arrange(c->mon);
+				break;
+			case XA_WM_NORMAL_HINTS:
+				c->hintsvalid = 0;
+				break;
+			case XA_WM_HINTS:
+				updatewmhints(c);
+				drawbars();
+				break;
 		}
 		if (ev->atom == XA_WM_NAME || ev->atom == netatom[NetWMName]) {
 			updatetitle(c);
@@ -1542,29 +1546,26 @@ void resizemouse(const Arg* arg) {
 		return;
 	XWarpPointer(dpy, None, c->win, 0, 0, 0, 0, c->w + c->bw - 1, c->h + c->bw - 1);
 	do {
-		XMaskEvent(dpy, MOUSEMASK | ExposureMask | SubstructureRedirectMask, &ev);
+		XNextEvent(dpy, &ev);
 		switch (ev.type) {
-		case ConfigureRequest:
-		case Expose:
-		case MapRequest:
-			handler[ev.type](&ev);
-			break;
-		case MotionNotify:
-			if ((ev.xmotion.time - lasttime) <= (1000 / 60))
-				continue;
-			lasttime = ev.xmotion.time;
+			case MotionNotify:
+				if ((ev.xmotion.time - lasttime) <= (1000 / 60))
+					continue;
+				lasttime = ev.xmotion.time;
 
-			nw = ev.xmotion.x - ocx;
-			nh = ev.xmotion.y - ocy;
-			aw = MAX(abs(nw), 10);
-			ah = MAX(abs(nh), 10);
-			resize(
-				c,
-				nw < 0 ? ocx - aw : ocx, nh < 0 ? ocy - ah : ocy,
-				aw, ah,
-				1
-			);
-			break;
+				nw = ev.xmotion.x - ocx;
+				nh = ev.xmotion.y - ocy;
+				aw = MAX(abs(nw), 10);
+				ah = MAX(abs(nh), 10);
+				resize(
+					c,
+					nw < 0 ? ocx - aw : ocx, nh < 0 ? ocy - ah : ocy,
+					aw, ah,
+					1
+				);
+				break;
+			default:
+				handle(&ev);
 		}
 	} while (ev.type != ButtonRelease);
 	XWarpPointer(dpy, None, c->win, 0, 0, 0, 0, c->w + c->bw - 1, c->h + c->bw - 1);
@@ -1595,13 +1596,17 @@ void restack(Monitor* m) {
 	drawbar(m);
 }
 
+void handle(XEvent* ev) {
+	if (handler[ev->type])
+		handler[ev->type](ev); /* call handler */
+}
+
 void run(void) {
 	XEvent ev;
 	/* main event loop */
 	XSync(dpy, False);
 	while (running && !XNextEvent(dpy, &ev))
-		if (handler[ev.type])
-			handler[ev.type](&ev); /* call handler */
+		handle(&ev);
 }
 
 void scan(void) {
