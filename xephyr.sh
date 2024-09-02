@@ -1,9 +1,16 @@
 #!/bin/sh
 
+W=1920
+H=1080
 FAKE=":5"
-unset XDG_SEAT
-# CMD="Xephyr -br -ac +iglx -screen 1920x1080 $FAKE"
-# CMD="Xephyr -br -ac +iglx -screen 1920x1200 $FAKE"
-CMD="Xephyr -br -ac +iglx -screen 960x600 $FAKE"
+
+CMD="Xephyr -br -ac +iglx -screen "$W"x"$H" $FAKE"
+
 echo "$CMD"
-$CMD
+echo Xephyr shell, exit to close Xephyr
+$CMD &
+PID=$!
+XDG_SEAT="" DISPLAY=$FAKE PS1="Xephyr\$ " sh
+kill -9 $PID
+echo
+

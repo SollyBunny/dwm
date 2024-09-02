@@ -2,33 +2,37 @@
 
 static const unsigned int focusonhover = 0; /* 0 means focus only on click, otherwise */
 static const unsigned int focusonwheel = 0; /* if focusonhover is 0, whether to count scrolling as click */
+static const unsigned int resizemousewarp = 0; /* if 1 warp pointer to corner when resizing */
 
 /* appearance */
-static const unsigned int borderpx  = 0;        /* border pixel of windows */
-static const unsigned int gappx     = 10;       /* gaps between windows */
-static const unsigned int snap      = 0;        /* snap pixel */
-static const int showbar            = 1;        /* 0 means no bar */
-static const int topbar             = 1;        /* 0 means bottom bar */
+static const unsigned int gapwindow   = 10;       /* gaps between windows (in layouts) */
+static const unsigned int gapbar      = 10;       /* gap between bar and window area edge */
+static const unsigned int gapedge     = 10;       /* gap between windows and window area edge (in layouts) */
+static const unsigned int borderwidth = 1;        /* border width of windows */
+static const unsigned int snap        = 0;        /* snap pixel */
+static const int showbar              = 1;        /* 0 means no bar */
+static const int topbar               = 1;        /* 0 means bottom bar */
 #define ICONSIZE (bh * 0.6) /* icon size */
-#define FONT_FAMILY "Iosevka Nerd"
+#define FONT_FAMILY "Iosevka Nerd Font"
 #define FONT_SIZE "17"
-static const char font[]            = FONT_FAMILY " " FONT_SIZE;
-static const char dmenufont[]       = FONT_FAMILY ":size=" FONT_SIZE;
-static const char col_bg []         = "#000000";
-static const char col_fg []         = "#ffddff";
-static const char col_txt[]         = "#ffffff";
+static const char font[]              = FONT_FAMILY " " FONT_SIZE;
+static const char dmenufont[]         = FONT_FAMILY ":size=" FONT_SIZE;
+static const char col_bg []           = "#000000";
+static const char col_fg []           = "#ffddff";
+static const char col_txt[]           = "#ffffff";
 static const unsigned int alpha = 0xff * 0.7;
 #define DMENUALPHA "178" // 0xff * 0.7
 static const char *const colors[][3]      = {
-	/*               fg       bg      border   */
-	[SchemeNorm] = { col_txt, col_bg, 0 },
-	[SchemeSel]  = { col_bg , col_fg, 0 },
+	/*               fg       bg      border */
+	[SchemeNorm] = { col_txt, col_bg, col_bg },
+	[SchemeSel]  = { col_bg , col_fg, col_fg },
 };
 static const unsigned int alphas[][3]      = {
-	/*               fg      bg        border*/
-	[SchemeNorm] = { OPAQUE, alpha, OPAQUE },
-	[SchemeSel]  = { OPAQUE, alpha, OPAQUE },
+	/*               fg       bg      border */
+	[SchemeNorm] = { OPAQUE,  alpha,  alpha },
+	[SchemeSel]  = { OPAQUE,  alpha,  alpha },
 };
+
 /* tagging */
 static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
@@ -37,10 +41,10 @@ static const Rule rules[] = {
 	 *	WM_CLASS(STRING) = instance, class
 	 *	WM_NAME(STRING) = title
 	 */
-	/* class      instance    title       tags mask     isfloating   monitor */
-	{ NULL,       NULL,       NULL,       0,            False,       -1 },
-	// { "Gimp",     NULL,       NULL,       0,            1,           -1 },
-	// { "Firefox",  NULL,       NULL,       1 << 8,       0,           -1 },
+	/* class      instance    title       tags mask     position               monitor */
+	// { "Gimp",     NULL,       NULL,       0,            PositionN,             -1 },
+	// { "Firefox",  NULL,       NULL,       1 << 8,       PositionFullscreen,    -1 },
+	{ NULL,       NULL,       NULL,       0,            PositionTiled,          -1 }, // default rule
 };
 
 /* alt tab */
@@ -60,7 +64,6 @@ static Client *get_nth_client(int n) {
 	for (c = next_visible(selmon->stack); c && n--; c = next_visible(c->snext));
 	return c;
 }
-
 static void alt_tab(const Arg *arg) {
 	// put all of the windows back in their original focus/stack position */
 	Client *c;
@@ -82,15 +85,14 @@ static void alt_tab(const Arg *arg) {
 static const float mfact        = 0.55; /* factor of master area size [0.05..0.95] */
 static const int nmaster        = 1;    /* number of clients in master area */
 static const int resizehints    = 1;    /* 1 means respect size hints in tiled resizals */
-static const int lockfullscreen = 0;    /* 1 will force focus on the fullscreen window */
 
 static const Layout layouts[] = {
-	/* symbol     arrange function */
-	{ "󰕰",      grid },    /* even sized columns */
-	{ "󰙀",      tile },    /* first entry is default */
-	{ "󰜨",      col },     /* even sized columns */
-	{ "",      monocle }, /* only 1 window fullscreen */
-	{ "",      NULL },    /* no layout function means floating behavior */
+	/* symbol  arrange function */
+	{ "󰕰",     ltgrid    }, /* grid (default) */
+	{ "󰙀",     ltrow     }, /* even sized rows */
+	{ "󰕭",     ltcol     }, /* even sized columns */
+	{ "",     ltmonocle }, /* only 1 window fullscreen */
+	{ "󰅡",     NULL      }, /* floating behavior */
 };
 
 /* commands */
@@ -112,78 +114,90 @@ static const char *screencmd[]    = { "screenshot",                             
 static const char *screenallcmd[] = { "screenshot", "1",                             NULL };
 static const char *xkillcmd[]     = { "xkill",                                       NULL };
 
-/* Auto start */
+/* autostart */
 #define AUTOSTART "~/.dwm/autostart.sh"
 static const char *const autostart[] = {
+	AUTOSTARTDISOWN, TERM, NULL,
 	"/bin/sh", "-c", AUTOSTART, NULL,
-	TERM, NULL,
 	NULL /* terminate */
 };
 
-/* Key Binds */
+/* keybinds */
 
 #define MODKEY Mod4Mask
 #define BINDTAG(n) \
-	{ MODKEY,                       XK_##n,     view,              { .ui = 1 << (n - 1)          } }, \
-	{ MODKEY|ShiftMask,             XK_##n,     tag,               { .ui = 1 << (n - 1)          } }, \
-	{ MODKEY|ControlMask,           XK_##n,     toggleview,        { .ui = 1 << (n - 1)          } }, \
-	{ MODKEY|ShiftMask|ControlMask, XK_##n,     toggletag,         { .ui = 1 << (n - 1)          } },
+	{ MODKEY,                       XK_##n,     cmdview,              { .ui = 1 << (n - 1)              } }, \
+	{ MODKEY|ShiftMask,             XK_##n,     cmdtag,               { .ui = 1 << (n - 1)              } }, \
+	{ MODKEY|ControlMask,           XK_##n,     cmdtoggleview,        { .ui = 1 << (n - 1)              } }, \
+	{ MODKEY|ShiftMask|ControlMask, XK_##n,     cmdtoggletag,         { .ui = 1 << (n - 1)              } },
 static const Key keys[] = {
 	BINDTAG(1) BINDTAG(2) BINDTAG(3) BINDTAG(4) BINDTAG(5) BINDTAG(6) BINDTAG(7) BINDTAG(8) BINDTAG(9)
-	/* modifier                     key         function           argument */
+	/* modifier                     key         function              argument */
 	
-	{ MODKEY,		                XK_t,	    spawn,         	   { .v = termcmd                } },
-	{ MODKEY,		                XK_r,	    spawn,         	   { .v = dmenucmd               } },
-	{ MODKEY,				        XK_Print,   spawn,			   { .v = screenallcmd           } },
-	{ 0,					        XK_Print,   spawn,			   { .v = screencmd              } },
+	{ MODKEY,                       XK_t,       cmdspawn,             { .v = termcmd                    } },
+	{ MODKEY,                       XK_r,       cmdspawn,             { .v = dmenucmd                   } },
+	{ MODKEY,                       XK_Print,   cmdspawn,             { .v = screenallcmd               } },
+	{ 0,                            XK_Print,   cmdspawn,             { .v = screencmd                  } },
 
-	{ MODKEY|ControlMask,           XK_Delete,  quit,              { 0 			                 } },
-	{ MODKEY,             	        XK_F4,      killclient,        { 0                           } },
-	{ MODKEY|ShiftMask,	            XK_F4,      spawn,			   { .v = xkillcmd               } },
+	{ MODKEY|ControlMask,           XK_Delete,  cmdquit,              { 0                               } },
+	{ MODKEY,                       XK_F4,      cmdkillclient,        { 0                               } },
+	{ MODKEY|ShiftMask,             XK_F4,      cmdspawn,             { .v = xkillcmd                   } },
 
-	{ 0,                            XK_Super_L, start_alt_tab,     { 0                           } },
-	{ MODKEY,                       XK_Tab,     alt_tab,           { 0                           } },
+	{ 0,                            XK_Super_L, start_alt_tab,        { 0                               } },
+	{ MODKEY,                       XK_Tab,     alt_tab,              { 0                               } },
 	
-	{ MODKEY,                       XK_space,   togglealwaysontop, { .ui = 0                     } },
-	{ MODKEY|ShiftMask,             XK_space,   togglealwaysontop, { .ui = 1                     } },
+	{ MODKEY,                       XK_space,   cmdtogglealwaysontop, { .ui = 0                         } },
+	{ MODKEY|ShiftMask,             XK_space,   cmdtogglealwaysontop, { .ui = 1                         } },
 
-	{ MODKEY,                       XK_q,       moveresizetile,    { .ui = TileNW                } },
-	{ MODKEY,                       XK_a,       moveresizetile,    { .ui = TileW                 } },
-	{ MODKEY,                       XK_z,       moveresizetile,    { .ui = TileSW                } },
+	{ MODKEY,                       XK_q,       cmdsetposition,       { .i = PositionNW                 } },
+	{ MODKEY,                       XK_a,       cmdsetposition,       { .i = PositionW                  } },
+	{ MODKEY,                       XK_z,       cmdsetposition,       { .i = PositionSW                 } },
+	{ MODKEY,                       XK_w,       cmdsetposition,       { .i = PositionN                  } },
+	{ MODKEY,                       XK_s,       cmdsetposition,       { .i = PositionFill               } },
+	{ MODKEY,                       XK_x,       cmdsetposition,       { .i = PositionS                  } },
+	{ MODKEY,                       XK_e,       cmdsetposition,       { .i = PositionNE                 } },
+	{ MODKEY,                       XK_d,       cmdsetposition,       { .i = PositionE                  } },
+	{ MODKEY,                       XK_c,       cmdsetposition,       { .i = PositionSE                 } },
+	{ MODKEY|ShiftMask,             XK_s,       cmdsetposition,       { .i = PositionFullscreen         } },
+	{ MODKEY|ControlMask,           XK_s,       cmdsetposition,       { .i = PositionCenter             } },
+	{ MODKEY|ControlMask|ShiftMask, XK_s,       cmdsetposition,       { .i = PositionDoubleFullscreen   } },
 
-	{ MODKEY,                       XK_w,       moveresizetile,    { .ui = TileN                 } },
-	{ MODKEY,                       XK_s,       moveresizetile,    { .ui = TileFill              } },
-	{ MODKEY,                       XK_x,       moveresizetile,    { .ui = TileS                 } },
-        
-	{ MODKEY,                       XK_e,       moveresizetile,    { .ui = TileNE                } },
-	{ MODKEY,                       XK_d,       moveresizetile,    { .ui = TileE                 } },
-	{ MODKEY,                       XK_c,       moveresizetile,    { .ui = TileSE                } },
+	{ MODKEY|ShiftMask,             XK_F1,      cmdsetgapwindow,      { .i = -10                        } },
+	{ MODKEY|ShiftMask,             XK_F2,      cmdsetgapbar,         { .i = -10                        } },
+	{ MODKEY|ShiftMask,             XK_F3,      cmdsetgapedge,        { .i = -10                        } },
+	{ MODKEY|ControlMask,           XK_F1,      cmdsetgapwindow,      { .i = 10                         } },
+	{ MODKEY|ControlMask,           XK_F2,      cmdsetgapbar,         { .i = 10                         } },
+	{ MODKEY|ControlMask,           XK_F3,      cmdsetgapedge,        { .i = 10                         } },
 
-	{ MODKEY|ShiftMask,             XK_s,       moveresizetile,    { .ui = TileFullscreen        } },
-	{ MODKEY|ControlMask,           XK_s,       moveresizetile,    { .ui = TileCenter            } },
-	{ MODKEY|ControlMask|ShiftMask, XK_s,       moveresizetile,    { .ui = TileDoubleFullscreen  } },
+	{ MODKEY|ShiftMask,             XK_F4,      cmdsetmfact,          { .f = -0.05                      } },
+	{ MODKEY|ShiftMask,             XK_F5,      cmdincnmaster,        { .i = -1                         } },
+	{ MODKEY|ControlMask,           XK_F4,      cmdsetmfact,          { .f = 0.05                       } },
+	{ MODKEY|ControlMask,           XK_F5,      cmdincnmaster,        { .i = 1                          } }
 
 };
 
 /* button definitions */
 /* click can be ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle, ClkClientWin, or ClkRootWin */
 static const Button buttons[] = {
-	/* click                event mask      button          function        argument */
-	{ ClkLtSymbol,          0,              Button1,        inclayout,      { .i =  1          } },
-	{ ClkLtSymbol,          0,              Button2,        setlayout,      { .v = &layouts[0] } },
-	{ ClkLtSymbol,          0,              Button3,        inclayout,      { .i = -1          } },
-	{ ClkWinTitle,          0,              Button1,        focusclient,    { 0                } },
-	{ ClkWinTitle,          0,              Button2,        togglefloating, { 0                } },
-	{ ClkWinTitle,          0,              Button3,        killclient,     { 0                } },
-	{ ClkStatusText,        0,              Button1,        spawn,          { .v = termcmd     } },
-	{ ClkStatusText,        0,              Button2,        spawn,          { .v = termcmd     } },
-	{ ClkStatusText,        0,              Button3,        spawn,          { .v = termcmd     } },
-	{ ClkClientWin,         MODKEY,         Button1,        movemouse,      { 0                } },
-	{ ClkClientWin,         MODKEY,         Button2,        togglefloating, { 0                } },
-	{ ClkClientWin,         MODKEY,         Button3,        resizemouse,    { 0                } },
-	{ ClkTagBar,            0,              Button1,        view,           { 0                } },
-	{ ClkTagBar,            0,              Button3,        toggleview,     { 0                } },
-	{ ClkTagBar,            MODKEY,         Button1,        tag,            { 0                } },
-	{ ClkTagBar,            MODKEY,         Button3,        toggletag,      { 0                } },
+	/* click                event mask          button          function           argument */
+	{ ClkLtSymbol,          0,                  Button1,        cmdinclayout,      { .i =  1          } },
+	{ ClkLtSymbol,          0,                  Button2,        cmdsetlayout,      { .v = &layouts[0] } },
+	{ ClkLtSymbol,          0,                  Button3,        cmdinclayout,      { .i = -1          } },
+	{ ClkWinTitle,          0,                  Button1,        cmdfocusclient,    { 0                } },
+	{ ClkWinTitle,          0,                  Button2,        cmdtogglefloating, { 0                } },
+	{ ClkWinTitle,          ShiftMask,          Button3,        cmdkillclient,     { 0                } },
+	{ ClkWinTitle,          0,                  Button3,        cmdfocusclient,    { 0                } },
+	{ ClkStatusText,        0,                  Button1,        cmdspawn,          { .v = termcmd     } },
+	{ ClkStatusText,        0,                  Button2,        cmdspawn,          { .v = termcmd     } },
+	{ ClkStatusText,        0,                  Button3,        cmdspawn,          { .v = termcmd     } },
+	{ ClkClientWin,         MODKEY,             Button1,        cmdmovemouse,      { .i = 0           } },
+	{ ClkClientWin,         MODKEY,             Button3,        cmdresizemouse,    { .i = 0           } },
+	{ ClkClientWin,         MODKEY|ShiftMask,   Button1,        cmdmovemouse,      { .i = 1           } },
+	{ ClkClientWin,         MODKEY|ShiftMask,   Button3,        cmdresizemouse,    { .i = 1           } },
+	{ ClkClientWin,         MODKEY|ShiftMask,   Button2,        cmdtogglefloating, { 0                } },
+	{ ClkTagBar,            0,                  Button1,        cmdview,           { 0                } },
+	{ ClkTagBar,            0,                  Button3,        cmdtoggleview,     { 0                } },
+	{ ClkTagBar,            MODKEY,             Button1,        cmdtag,            { 0                } },
+	{ ClkTagBar,            MODKEY,             Button3,        cmdtoggletag,      { 0                } },
 };
 
