@@ -47,6 +47,9 @@ static const Rule rules[] = {
 	{ NULL,       NULL,       NULL,       0,            PositionTiled,          -1 }, // default rule
 };
 
+static const char* ignorehintsmatch[] = { "steam", "Steam" };
+static const char* ignorehintscontains[] = { "steam_app_" };
+
 /* alt tab */
 static int alt_tab_count = 0;
 static void start_alt_tab(const Arg *arg) { alt_tab_count = 0; }

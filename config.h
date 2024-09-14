@@ -3,7 +3,7 @@
 static const unsigned int focusonhover = 0; /* 0 means focus only on click, otherwise */
 static const unsigned int focusonwheel = 0; /* if focusonhover is 0, whether to count scrolling as click */
 static const unsigned int resizemousewarp = 0; /* if 1 warp pointer to corner when resizing */
-
+static const unsigned int focusmononhover = 0; /* 1 means focus monitor when mouse on monitor */
 /* appearance */
 static const unsigned int gapwindow   = 10;       /* gaps between windows (in layouts) */
 static const unsigned int gapbar      = 10;       /* gap between bar and window area edge */
@@ -34,7 +34,7 @@ static const unsigned int alphas[][3]      = {
 };
 
 /* tagging */
-static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+static const char* tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
 static const Rule rules[] = {
 	/* xprop(1):
@@ -85,6 +85,9 @@ static void alt_tab(const Arg *arg) {
 static const float mfact        = 0.55; /* factor of master area size [0.05..0.95] */
 static const int nmaster        = 1;    /* number of clients in master area */
 static const int resizehints    = 1;    /* 1 means respect size hints in tiled resizals */
+
+static const char* ignorehintsmatch[] = { "steam", "Steam" };
+static const char* ignorehintscontains[] = { "steam_app_" };
 
 static const Layout layouts[] = {
 	/* symbol  arrange function */
