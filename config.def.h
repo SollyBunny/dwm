@@ -1,7 +1,9 @@
 /* See LICENSE file for copyright and license details. */
 
-static const unsigned int focusonhover = 0; /* 0 means focus only on click, otherwise */
-static const unsigned int focusonwheel = 0; /* if focusonhover is 0, whether to count scrolling as click */
+static const unsigned int focusonhover = 0;    /* 0 means focus only on click, otherwise */
+static const unsigned int focusonwheel = 0;    /* if focusonhover is 0, whether to count scrolling as click */
+static const unsigned int focusmononhover = 0; /* 0 means focus only on click, otherwise */
+static const unsigned int focusmononwheel = 0; /* if focusmononhover is 0, whether to count scrolling as click */
 static const unsigned int resizemousewarp = 0; /* if 1 warp pointer to corner when resizing */
 
 /* appearance */

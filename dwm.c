@@ -482,7 +482,7 @@ void cmdfocusmon(const Arg* arg) {
 		return;
 	if ((m = dirtomon(arg->i)) == selmon)
 		return;
-	unfocus(selmon->sel, 0);
+	unfocus(selmon->sel, 1);
 	selmon = m;
 	focus(NULL);
 }
@@ -600,8 +600,9 @@ void cmdmovemouse(const Arg* arg) {
 		y = ev.xbutton.y_root;
 		if ((m = postomon(x, y)) != selmon) {
 			sendmon(c, m);
+			unfocus(selmon->sel, 1);
 			selmon = m;
-			focus(NULL);
+			focus(c);
 		}
 	} else {
 		setmaster(c);
@@ -888,7 +889,7 @@ void eventbuttonpress(XEvent* e) {
 	click = ClkRootWin;
 	/* focus monitor if necessary */
 	if ((m = postomon(ev->x_root, ev->y_root)) && m != selmon
-		&& (focusonwheel || (ev->button != Button4 && ev->button != Button5))) {
+		&& (focusmononwheel || (ev->button != Button4 && ev->button != Button5))) {
 		unfocus(selmon->sel, 1);
 		selmon = m;
 		focus(NULL);
@@ -1031,20 +1032,29 @@ void eventdestroynotify(XEvent* e) {
 }
 
 void evententernotify(XEvent *e) {
-	if (focusonhover == 0) return;
 	Client *c;
-	Monitor *m;
 	XCrossingEvent *ev = &e->xcrossing;
 	if ((ev->mode != NotifyNormal || ev->detail == NotifyInferior) && ev->window != root)
 		return;
 	
 	c = wintoclient(ev->window);
-	m = c ? c->mon : wintomon(ev->window);
-	if (m != selmon) {
-		unfocus(selmon->sel, 1);
-		selmon = m;
-	} else if (!c || c == selmon->sel)
+	if (!c) return;
+	if (!focusonhover) {
+		if (focusmononhover) {
+			if (c->mon != selmon) {
+				unfocus(selmon->sel, 1);
+				selmon = c->mon;
+				focus(c);
+			}
+		}
 		return;
+	}
+	if (c->mon != selmon) {
+		unfocus(selmon->sel, 1);
+		selmon = c->mon;
+	} else if (c == selmon->sel) {
+		return;
+	}
 	focus(c);
 }
 
@@ -1057,12 +1067,12 @@ void eventexpose(XEvent* e) {
 }
 
 void eventmotionnotify(XEvent *e) {
-	if (focusonhover == 0) return;
+	if (focusmononhover == 0) return;
 	Monitor *m;
 	Client *c;
 	XMotionEvent *ev = &e->xmotion;
 
-	if ((m = postomon(ev->x_root, ev->y_root)) != selmon) {
+	if (focusmononhover && (m = postomon(ev->x_root, ev->y_root)) != selmon) {
 		unfocus(selmon->sel, 1);
 		selmon = m;
 		focus(NULL);
@@ -1283,6 +1293,7 @@ int applysizehints(Client* c, int* x, int* y, int* w, int* h, int interact) {
 }
 
 void arrange(Monitor* m) {
+	XEvent ev;
 	if (m)
 		showhide(m->stack);
 	else for (m = mons; m; m = m->next)
@@ -1294,6 +1305,7 @@ void arrange(Monitor* m) {
 		for (m = mons; m; m = m->next)
 			arrangemon(m);
 		XSync(dpy, False);
+		while (XCheckMaskEvent(dpy, EnterWindowMask, &ev));
 	}
 }
 
@@ -1832,7 +1844,7 @@ Client* manage(Window w, XWindowAttributes* wa) {
 	c->y = c->oldy = wa->y;
 	c->w = c->oldw = wa->width;
 	c->h = c->oldh = wa->height;
-	c->oldbw = wa->border_width;
+	c->oldbw = c->bw = borderwidth;
 
 	updateicon(c);
 	updatetitle(c);
@@ -1850,7 +1862,6 @@ Client* manage(Window w, XWindowAttributes* wa) {
 		c->y = c->mon->wy + c->mon->wh - HEIGHT(c);
 	c->x = MAX(c->x, c->mon->wx);
 	c->y = MAX(c->y, c->mon->wy);
-	c->bw = borderwidth;
 
 	wc.border_width = c->bw;
 	XConfigureWindow(dpy, w, CWBorderWidth, &wc);
@@ -1869,15 +1880,12 @@ Client* manage(Window w, XWindowAttributes* wa) {
 	attachstack(c);
 	XChangeProperty(dpy, root, netatom[NetClientList], XA_WINDOW, 32, PropModeAppend,
 		(unsigned char*)&(c->win), 1);
-	XMoveResizeWindow(dpy, c->win, c->x + 2 * sw, c->y, c->w, c->h); /* some windows require this */
+	hideclient(c); /* some windows require this */
 	setclientstate(c, NormalState);
-	if (c->mon == selmon)
-		unfocus(selmon->sel, 0);
-	c->mon->sel = c;
-	setposition(c, c->position, 1);
+	focus(c);
 	arrange(c->mon);
 	XMapWindow(dpy, c->win);
-	focus(NULL);
+	setfocus(c);
 	return c;
 }
 
@@ -2180,9 +2188,8 @@ void setmaster(Client* master) {
 	if (!master) return;
 	detach(master);
 	attach(master);
-	master->oldposition = PositionNone; /* force arrange */
-	setposition(master, PositionTiled, 0);
 	focus(master);
+	setposition(master, PositionTiled, 1);
 }
 
 void setup(void) {
@@ -2275,11 +2282,19 @@ void seturgent(Client* c, int urg) {
 
 void hideclient(Client* c) {
 	Monitor* m = c->mon;
-	// with window move animation, make window not intersect with bar
-	if (m->topbar)
-		XMoveWindow(dpy, c->win, c->x, m->my + m->mh + c->h * 2);
-	else
-		XMoveWindow(dpy, c->win, c->x, m->my - c->h * 2);
+	if (sw > sh) {
+		// make window not intersect with bar
+		if (m->topbar)
+			XMoveWindow(dpy, c->win, c->x, sh * 2 + c->h * 2);
+		else
+			XMoveWindow(dpy, c->win, c->x, -sh - c->h * 2);
+	} else {
+		// windows go outwards to sides
+		if (c->x + c->w / 2 < m->wx + m->ww / 2)
+			XMoveWindow(dpy, c->win, sw * 2 + c->w * 2, c->y);
+		else
+			XMoveWindow(dpy, c->win, -sw - c->w * 2, c->y);
+	}
 }
 
 void showhide(Client* c) {
