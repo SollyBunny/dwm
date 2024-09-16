@@ -1,9 +1,8 @@
 /* See LICENSE file for copyright and license details. */
 
-static const unsigned int focusonhover = 0; /* 0 means focus only on click, otherwise */
+static const unsigned int focusonhover = 1; /* 0 means focus only on click, otherwise */
 static const unsigned int focusonwheel = 0; /* if focusonhover is 0, whether to count scrolling as click */
 static const unsigned int resizemousewarp = 0; /* if 1 warp pointer to corner when resizing */
-static const unsigned int focusmononhover = 0; /* 1 means focus monitor when mouse on monitor */
 /* appearance */
 static const unsigned int gapwindow   = 10;       /* gaps between windows (in layouts) */
 static const unsigned int gapbar      = 10;       /* gap between bar and window area edge */
@@ -152,18 +151,27 @@ static const Key keys[] = {
 	{ MODKEY,                       XK_space,   cmdtogglealwaysontop, { .ui = 0                         } },
 	{ MODKEY|ShiftMask,             XK_space,   cmdtogglealwaysontop, { .ui = 1                         } },
 
-	{ MODKEY,                       XK_q,       cmdsetposition,       { .i = PositionNW                 } },
-	{ MODKEY,                       XK_a,       cmdsetposition,       { .i = PositionW                  } },
-	{ MODKEY,                       XK_z,       cmdsetposition,       { .i = PositionSW                 } },
-	{ MODKEY,                       XK_w,       cmdsetposition,       { .i = PositionN                  } },
-	{ MODKEY,                       XK_s,       cmdsetposition,       { .i = PositionFill               } },
-	{ MODKEY,                       XK_x,       cmdsetposition,       { .i = PositionS                  } },
-	{ MODKEY,                       XK_e,       cmdsetposition,       { .i = PositionNE                 } },
-	{ MODKEY,                       XK_d,       cmdsetposition,       { .i = PositionE                  } },
-	{ MODKEY,                       XK_c,       cmdsetposition,       { .i = PositionSE                 } },
-	{ MODKEY|ShiftMask,             XK_s,       cmdsetposition,       { .i = PositionFullscreen         } },
-	{ MODKEY|ControlMask,           XK_s,       cmdsetposition,       { .i = PositionCenter             } },
-	{ MODKEY|ControlMask|ShiftMask, XK_s,       cmdsetposition,       { .i = PositionDoubleFullscreen   } },
+	{ MODKEY,                       XK_q,       cmdsetposition,       { .i = PositionNW                                } },
+	{ MODKEY|ShiftMask,             XK_q,       cmdsetposition,       { .i = PositionNW               | PositionForced } },
+	{ MODKEY,                       XK_a,       cmdsetposition,       { .i = PositionW                                 } },
+	{ MODKEY|ShiftMask,             XK_a,       cmdsetposition,       { .i = PositionW                | PositionForced } },
+	{ MODKEY,                       XK_z,       cmdsetposition,       { .i = PositionSW                                } },
+	{ MODKEY|ShiftMask,             XK_z,       cmdsetposition,       { .i = PositionSW               | PositionForced } },
+	{ MODKEY,                       XK_w,       cmdsetposition,       { .i = PositionN                                 } },
+	{ MODKEY|ShiftMask,             XK_w,       cmdsetposition,       { .i = PositionN                | PositionForced } },
+	{ MODKEY,                       XK_s,       cmdsetposition,       { .i = PositionFill                              } },
+	{ MODKEY|ShiftMask,             XK_s,       cmdsetposition,       { .i = PositionFill             | PositionForced } },
+	{ MODKEY,                       XK_x,       cmdsetposition,       { .i = PositionS                                 } },
+	{ MODKEY|ShiftMask,             XK_x,       cmdsetposition,       { .i = PositionS                | PositionForced } },
+	{ MODKEY,                       XK_e,       cmdsetposition,       { .i = PositionNE                                } },
+	{ MODKEY|ShiftMask,             XK_e,       cmdsetposition,       { .i = PositionNE               | PositionForced } },
+	{ MODKEY,                       XK_d,       cmdsetposition,       { .i = PositionE                                 } },
+	{ MODKEY|ShiftMask,             XK_d,       cmdsetposition,       { .i = PositionE                | PositionForced } },
+	{ MODKEY,                       XK_c,       cmdsetposition,       { .i = PositionSE                                } },
+	{ MODKEY|ShiftMask,             XK_c,       cmdsetposition,       { .i = PositionSE               | PositionForced } },
+	{ MODKEY|ControlMask,           XK_s,       cmdsetposition,       { .i = PositionCenter                            } },
+	{ MODKEY|ShiftMask|ControlMask, XK_s,       cmdsetposition,       { .i = PositionCenter           | PositionForced } },
+	{ MODKEY|ShiftMask,             XK_s,       cmdsetposition,       { .i = PositionFullscreen       | PositionForced } },
 
 	{ MODKEY|ShiftMask,             XK_F1,      cmdsetgapwindow,      { .i = -10                        } },
 	{ MODKEY|ShiftMask,             XK_F2,      cmdsetgapbar,         { .i = -10                        } },

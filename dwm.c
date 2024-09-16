@@ -79,7 +79,8 @@ enum {
 	PositionFullscreen, PositionCenter, PositionDoubleFullscreen,
 	PositionNW, PositionW, PositionSW,
 	PositionN, PositionFill, PositionS,
-	PositionNE, PositionE, PositionSE
+	PositionNE, PositionE, PositionSE,
+	PositionForced = 0x1000
 }; /* Position */
 
 typedef union Arg Arg;
@@ -251,7 +252,7 @@ static void pop(Client* c);
 static Monitor* postomon(int x, int y);
 static void resize(Client* c, int x, int y, int w, int h, int interact);
 static void resizeclient(Client* c, int x, int y, int w, int h);
-static void setpositionmove(Client* c, int position);
+static void setpositionmove(Client* c, int position, int force);
 static void setposition(Client* c, int position, int force);
 static void restack(Monitor* m);
 static void run(void);
@@ -595,8 +596,8 @@ void cmdmovemouse(const Arg* arg) {
 	} while (ISVISIBLE(c) && ev.type != ButtonRelease);
 	XUngrabPointer(dpy, CurrentTime);
 	if (moved) {
-		x = ev.xbutton.x;
-		y = ev.xbutton.y;
+		x = ev.xbutton.x_root;
+		y = ev.xbutton.y_root;
 		if ((m = postomon(x, y)) != selmon) {
 			sendmon(c, m);
 			selmon = m;
@@ -675,6 +676,7 @@ void cmdresizemouse(const Arg* arg) {
 	} while (ISVISIBLE(c) && ev.type != ButtonRelease);
 	XUngrabPointer(dpy, CurrentTime);
 	while (XCheckMaskEvent(dpy, EnterWindowMask, &ev));
+
 }
 
 void cmdquit(const Arg* arg) {
@@ -735,7 +737,7 @@ void cmdsetmfact(const Arg* arg) {
 
 void cmdsetposition(const Arg* arg) {
 	if (!selmon->sel) return;
-	setposition(selmon->sel, arg->i, 0);
+	setposition(selmon->sel, arg->i & (~PositionForced), arg->i & PositionForced ? 1 : 0);
 	focus(selmon->sel);
 }
 
@@ -883,16 +885,17 @@ void eventbuttonpress(XEvent* e) {
 	Client* c;
 	Monitor* m;
 	XButtonPressedEvent* ev = &e->xbutton;
-
 	click = ClkRootWin;
 	/* focus monitor if necessary */
-	if ((m = wintomon(ev->window)) && m != selmon
+	if ((m = postomon(ev->x_root, ev->y_root)) && m != selmon
 		&& (focusonwheel || (ev->button != Button4 && ev->button != Button5))) {
 		unfocus(selmon->sel, 1);
 		selmon = m;
 		focus(NULL);
 	}
-	if (ev->window == selmon->barwin) {
+	if (ev->window == root) {
+
+	} else if (ev->window == selmon->barwin) {
 		buttonbar(ev, &arg, &click);
 	} else if ((c = wintoclient(ev->window))) {
 		if (focusonwheel || (ev->button != Button4 && ev->button != Button5))
@@ -1034,6 +1037,7 @@ void evententernotify(XEvent *e) {
 	XCrossingEvent *ev = &e->xcrossing;
 	if ((ev->mode != NotifyNormal || ev->detail == NotifyInferior) && ev->window != root)
 		return;
+	
 	c = wintoclient(ev->window);
 	m = c ? c->mon : wintomon(ev->window);
 	if (m != selmon) {
@@ -1044,6 +1048,7 @@ void evententernotify(XEvent *e) {
 	focus(c);
 }
 
+
 void eventexpose(XEvent* e) {
 	Monitor* m;
 	XExposeEvent* ev = &e->xexpose;
@@ -1052,19 +1057,23 @@ void eventexpose(XEvent* e) {
 }
 
 void eventmotionnotify(XEvent *e) {
-	if (focusmononhover == 0) return;
-	static Monitor *mon = NULL;
+	if (focusonhover == 0) return;
 	Monitor *m;
+	Client *c;
 	XMotionEvent *ev = &e->xmotion;
 
-	if (ev->window != root)
-		return;
-	if ((m = postomon(ev->x_root, ev->y_root)) != mon && mon) {
+	if ((m = postomon(ev->x_root, ev->y_root)) != selmon) {
 		unfocus(selmon->sel, 1);
 		selmon = m;
 		focus(NULL);
 	}
-	mon = m;
+
+	if (
+		ev->window != root && ev->window != selmon->barwin
+		&& (selmon->sel == NULL || selmon->sel->win != ev->window)
+		&& (c = wintoclient(ev->window))) {
+		focus(c);
+	}
 }
 
 void eventfocusin(XEvent* e) {
@@ -1274,7 +1283,6 @@ int applysizehints(Client* c, int* x, int* y, int* w, int* h, int interact) {
 }
 
 void arrange(Monitor* m) {
-	XEvent ev;
 	if (m)
 		showhide(m->stack);
 	else for (m = mons; m; m = m->next)
@@ -1286,7 +1294,6 @@ void arrange(Monitor* m) {
 		for (m = mons; m; m = m->next)
 			arrangemon(m);
 		XSync(dpy, False);
-		while (XCheckMaskEvent(dpy, EnterWindowMask, &ev));
 	}
 }
 
@@ -1296,7 +1303,7 @@ void arrangemon(Monitor* m) {
 	for (c = m->clients; c; c = c->next) {
 		if (ISVISIBLE(c)) {
 			if (c->position != PositionNone && c->position != PositionTiled)
-				setpositionmove(c, c->position);
+				setpositionmove(c, c->position, 0);
 			if (c->position == PositionTiled)
 				++n;
 		}
@@ -1899,10 +1906,16 @@ void pop(Client* c) {
 } */
 
 Monitor* postomon(int x, int y) {
-	Monitor* m;
-	for (m = mons; m; m = m->next)
-		if (x > m->mx && x < m->wx + m->mw && y > m->my && y < m->my + m->mh)
+	Monitor* m = selmon;
+	if (m) {
+		if (x >= m->mx && x < m->wx + m->mw && y >= m->my && y < m->my + m->mh)
 			return m;
+	}
+	for (m = mons; m; m = m->next) {
+		if (m == selmon) continue;
+		if (x >= m->mx && x < m->wx + m->mw && y >= m->my && y < m->my + m->mh)
+			return m;
+	}
 	return selmon;
 }
 
@@ -1923,7 +1936,7 @@ void resizeclient(Client* c, int x, int y, int w, int h) {
 	XSync(dpy, False);
 }
 
-void setpositionmove(Client* c, int position) {
+void setpositionmove(Client* c, int position, int force) {
 	Monitor* m;
 	int mw, mh, x, y, w, h;
 	m = c->mon;
@@ -1988,10 +2001,21 @@ void setpositionmove(Client* c, int position) {
 			h = mh / 2 - m->gapwindow / 2;
 			break;
 		case PositionCenter:
-			x = mw / 2 - (mw / 2 - m->gapwindow / 2) / 2;
-			y = mh / 2 - (mh / 2 - m->gapwindow / 2) / 2;
-			w = mw / 2 - m->gapwindow / 2;
-			h = mh / 2 - m->gapwindow / 2;
+			if (force) {
+				w = c->w + 2 * c->bw;
+				h = c->h + 2 * c->bw;
+			} else {
+				x = 0;
+				y = 0;
+				w = mw / 2 - m->gapwindow / 2;
+				h = mh / 2 - m->gapwindow / 2;
+				applysizehints(c, &x, &y, &w, &h, 1);
+			}
+			x = mw / 2 - w / 2;
+			y = mh / 2 - h / 2;
+			if (force) {
+				if (x == c->x && y == c->y) return;
+			}
 			break;
 		default:
 			switch (position) {
@@ -2010,16 +2034,26 @@ void setpositionmove(Client* c, int position) {
 				default:
 					return;
 			}
-			resize(c, x + m->mx, y + m->my, w, h, 1);
+			if (force)
+				resizeclient(c, x + m->mx, y + m->my, w, h);
+			else
+				resize(c, x + m->mx, y + m->my, w, h, 1);
 			return;
 	}
-	resize(c, x + m->wx, y + m->wy, w - c->bw * 2, h - c->bw * 2, 1);
+	if (force)
+		resizeclient(c, x + m->wx, y + m->wy, w - c->bw * 2, h - c->bw * 2);
+	else
+		resize(c, x + m->wx, y + m->wy, w - c->bw * 2, h - c->bw * 2, 1);
 }
 
 void setposition(Client* c, int position, int force) {
 	if (!c) return;
-	if (!force && c->position == position) return;
-	c->oldposition = c->position;
+	if (c->position == position) {
+		if (!force) return;
+		c->oldposition = PositionNone;
+	} else {
+		c->oldposition = c->position;
+	}
 	c->position = position;
 	if (c->oldposition == PositionTiled || c->position == PositionTiled) {
 		arrange(c->mon);
@@ -2037,12 +2071,11 @@ void setposition(Client* c, int position, int force) {
 		XChangeProperty(dpy, c->win, netatom[NetWMState], XA_ATOM, 32,
 			PropModeReplace, (unsigned char*)&netatom[NetWMFullscreen], 1);
 	}
-	setpositionmove(c, position);
+	setpositionmove(c, position, force);
 }
 
 void restack(Monitor* m) {
 	Client* c;
-	XEvent ev;
 
 	if (!m->sel) return;
 
@@ -2053,7 +2086,6 @@ void restack(Monitor* m) {
 			XRaiseWindow(dpy, c->win);
 
 	XSync(dpy, False);
-	while (XCheckMaskEvent(dpy, EnterWindowMask, &ev)) {}
 
 	drawbar(m);
 }
