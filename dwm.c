@@ -294,7 +294,7 @@ static const char broken[] = "broken";
 static char stext[512];
 static int screen;
 static int sw, sh;           /* X display screen geometry width, height */
-static unsigned int textpad; /* Padding for text */
+static int textpad;          /* Padding for text */
 static int (*xerrorxlib)(Display*, XErrorEvent*);
 static unsigned int numlockmask = 0;
 static void (*eventhandler[LASTEvent]) (XEvent*) = {
@@ -1044,7 +1044,7 @@ void evententernotify(XEvent *e) {
 			if (c->mon != selmon) {
 				unfocus(selmon->sel, 1);
 				selmon = c->mon;
-				focus(c);
+				focus(NULL);
 			}
 		}
 		return;
@@ -1549,7 +1549,7 @@ void buttonbar(XButtonPressedEvent* ev, Arg* arg, unsigned int* click) {
 void drawbar(Monitor* m) {
 
 	int indn;
-	int x = 0, w, tw = 0, ew = 0;
+	int x = 0, w, tw = 0, ew = 0, iw = 0;
 	unsigned int i, n;
 	Client* c;
 
@@ -1600,21 +1600,40 @@ void drawbar(Monitor* m) {
 					continue;
 				ew = w / n;
 				drw_setscheme(drw, scheme[m == selmon && m->sel == c ? SchemeSel : SchemeNorm]);
-				
-				if (c->icon && (tw = c->icw + textpad * 2) <= ew) {
-					drw_rect(drw, x, 0, tw, m->bh, 1, 1);
-					drw_pic(drw, x + textpad, (m->bh - c->ich) / 2, c->icw, c->ich, c->icon);
-					if (c->isalwaysontop) drw_rect(drw, x + 1, 1, 4, 4, 0, 0);
-					x += tw;
-					ew -= tw;
+				if (c->icon) {
+					iw = c->icw;
+					if (iw > ew * 1.2) iw = 0;
 				} else {
-					if (c->isalwaysontop) drw_rect(drw, x + 1, 1, 4, 4, 0, 0);
+					iw = 0;
 				}
-				tw = TEXTW(c->name) + 2 * textpad;
-				if (tw > ew)
-					drw_text(drw, x, 0, ew, m->bh, textpad, c->name, 0, 0);
-				else
-					drw_text(drw, x, 0, ew, m->bh, (ew - tw) / 2 + textpad, c->name, 0, 0);
+				if (c->name[0] != 0) {
+					tw = TEXTW(c->name) - iw;
+					tw = MIN(tw, ew - iw - textpad * 2);
+					if (tw < 0) tw = 0;
+				} else {
+					tw = 0;
+				}
+				if (tw && iw) {
+					if (tw < ew - 2 * iw - 4 * textpad) {
+						drw_text(drw, x, 0, ew, m->bh, (ew - tw) / 2, c->name, 0, 0);
+						drw_pic(drw, x + textpad, (m->bh - c->ich) / 2, c->icw, c->ich, c->icon);
+					} else {
+						drw_rect(drw, x, 0, iw + 2 * textpad, m->bh, 1, 1);
+						drw_pic(drw, x + textpad, (m->bh - c->ich) / 2, c->icw, c->ich, c->icon);
+						drw_text(drw, x + (iw + 2 * textpad), 0, ew - (iw + 2 * textpad), m->bh, 0, c->name, 0, 0);
+					}
+				} else if (iw) {
+					drw_rect(drw, x, 0, ew, m->bh, 1, 1);
+					if (iw > ew)
+						drw_pic(drw, x, (m->bh - c->ich) / 2, c->icw, c->ich, c->icon);
+					else
+						drw_pic(drw, x + (ew - iw) / 2, (m->bh - c->ich) / 2, c->icw, c->ich, c->icon);
+				} else if (tw) {
+					drw_text(drw, x, 0, ew, m->bh, (ew - tw) / 2, c->name, 0, 0);
+				} else {
+					drw_rect(drw, x, 0, ew, m->bh, 1, 1);
+				}
+				if (c->isalwaysontop) drw_rect(drw, x + 1, 1, 4, 4, 0, 0);
 				x += ew;
 			}
 			w -= (w / n) * n;

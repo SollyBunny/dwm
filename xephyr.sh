@@ -2,9 +2,9 @@
 
 W=1920
 H=1080
-FAKE=":5"
+FAKE=":9"
 
-CMD="Xephyr -br -ac +iglx -screen "$W"x"$H" $FAKE"
+CMD="Xephyr -br -ac +iglx -resizeable -screen "$W"x"$H" $FAKE"
 
 echo "$CMD"
 echo Xephyr shell, exit to close Xephyr
