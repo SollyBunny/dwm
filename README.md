@@ -99,6 +99,11 @@ while true; do
 done
 ```
 
+Many tools exist to do this such as:
+* [`status`](https://github.com/SollyBunny/status): My own tool to do this
+* [`slstatus`](https://tools.suckless.org/slstatus/): Suckless batteries uncluded status
+* [`dwmstatus`](https://git.suckless.org/dwmstatus/): Suckless barebones status
+
 ## Patches
 
 The code has been completley mangled and taking a diff with the original will not give you anything useful, as such trying to apply more patches automatically will fail. Here are the patches which were applied, they all have merge conflicts and have to be edited / rewritten to work at all.
