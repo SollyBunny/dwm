@@ -1,8 +1,12 @@
 # dwm - dynamic window manager
 
+![Rice](rice.webp)
+
 dwm is an extremely fast, small, and dynamic window manager for X11.
 
 This repo is a fork of dwm made for myself, feel free to use it :P
+
+If you find any bugs, or want anything to be added please submit an issue.
 
 ## Installation
 
