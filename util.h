@@ -12,6 +12,7 @@
 #ifndef SWAP
 #define SWAP(a, b)              do { typeof(a) _ = (a); (a) = (b); (b) = (_); } while (0)
 #endif
+#define LENGTH(X)               (sizeof X / sizeof X[0])
 
 void die(const char *fmt, ...);
 void *ecalloc(size_t nmemb, size_t size);

@@ -72,7 +72,6 @@ Windows style psuedo tiling is available, and might be more useful to some:
 ## Requirements
 * XLib
 * XFT
-* Pango
 * Imlib2
 * Iosevka Nerd Font (default in `config.h`)
 * A Nerd Font (to show layouts)
@@ -115,7 +114,6 @@ The code has been completley mangled and taking a diff with the original will no
 * [https://dwm.suckless.org/patches/barpadding/dwm-barpadding-20211020-a786211.diff](https://dwm.suckless.org/patches/barpadding/dwm-barpadding-20211020-a786211.diff)
 * [https://dwm.suckless.org/patches/cool_autostart/dwm-cool-autostart-20240312-9f88553.diff](https://dwm.suckless.org/patches/cool_autostart/dwm-cool-autostart-20240312-9f88553.diff)
 * [https://dwm.suckless.org/patches/fixmultimon/dwm-fixmultimon-6.4.diff](https://dwm.suckless.org/patches/fixmultimon/dwm-fixmultimon-6.4.diff)
-* [https://dwm.suckless.org/patches/pango/dwm-pango-20230520-e81f17d.diff](https://dwm.suckless.org/patches/pango/dwm-pango-20230520-e81f17d.diff)
 * [https://dwm.suckless.org/patches/steam/dwm-steam-6.2.diff](https://dwm.suckless.org/patches/steam/dwm-steam-6.2.diff)
 * [https://dwm.suckless.org/patches/clientindicators/dwm-clientindicators-6.2.diff](https://dwm.suckless.org/patches/clientindicators/dwm-clientindicators-6.2.diff)
 * [https://dwm.suckless.org/patches/fancybar/dwm-fancybar-20220527-d3f93c7.diff](https://dwm.suckless.org/patches/fancybar/dwm-fancybar-20220527-d3f93c7.diff)

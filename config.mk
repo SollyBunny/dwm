@@ -1,39 +1,53 @@
 # dwm version
 VERSION = 6.5
 
-# Customize below to fit your system
-
-# paths
 PREFIX = /usr/local
 MANPREFIX = ${PREFIX}/share/man
 
-X11INC = /usr/X11R6/include
-X11LIB = /usr/X11R6/lib
+CC = cc
 
-# Xinerama, comment if you don't want it
-XINERAMALIBS  = -lXinerama
-XINERAMAFLAGS = -DXINERAMA
+NODRW = 0 # Set to 1 to disable drawing
+
+INCS = 
+LIBS = 
+FLAG = 
+
+# X11
+LIBS += -I/usr/X11R6/lib -lX11
+INCS += -L/usr/X11R6/include
+
+# Xinerama
+LIBS += -lXinerama
+FLAG += -DXINERAMA
+
+ifeq ($(strip $(NODRW)), 0)
 
 # freetype
-FREETYPELIBS = -lfontconfig -lXft
-FREETYPEINC = /usr/include/freetype2
+LIBS += -lfontconfig -lXft
+INCS += -I/usr/include/freetype2
 # OpenBSD (uncomment)
-#FREETYPEINC = ${X11INC}/freetype2
-#MANPREFIX = ${PREFIX}/man
+# LIBS += ${X11INC}/freetype2
+# incs += ${PREFIX}/man
 
-# includes and libs
-INCS = -I${X11INC} -I${FREETYPEINC} `pkg-config --cflags-only-I xft pango pangoxft`
-LIBS = -L${X11LIB} -lX11 ${XINERAMALIBS} ${FREETYPELIBS} `pkg-config --libs xft pango pangoxft` -lXrender -lImlib2
+# Imlib2
+LIBS += -lXrender -lImlib2
+
+else
+
+FLAG += -DNODRW
+
+endif
+
+# Debug Info
+FLAG += -g
+# Debug Flags
+# FLAG += -O1 -fsanitize=address -fno-omit-frame-pointer
+# Release Flags
+FLAG += -O4
+# Solaris Relase FLags (uncomment)
+# FLAG += -fast
 
 # flags
-DEBUGFLAGS = -O0 -g -fsanitize=address -fno-omit-frame-pointer
-# RELEASEFLAGS = -O4
-CFLAGS   = -std=c99 -D_POSIX_C_SOURCE=200809 -pedantic -Wall -O4 ${INCS} -DVERSION=\"${VERSION}\" ${XINERAMAFLAGS} ${DEBUGFLAGS} ${RELEASEFLAGS}
-LDFLAGS  = ${LIBS} ${DEBUGFLAGS} ${RELEASEFLAGS}
+CFLAGS   = -std=c99 -D_POSIX_C_SOURCE=200809 -pedantic -Wall -DVERSION=\"${VERSION}\" ${INCS} ${FLAG}
+LDFLAGS  = ${LIBS} ${FLAG}
 
-# Solaris
-#CFLAGS = -fast ${INCS} -DVERSION=\"${VERSION}\"
-#LDFLAGS = ${LIBS}
-
-# compiler and linker
-CC = cc
