@@ -196,9 +196,9 @@ static void cmdsetgapedge(const Arg* arg);
 static void cmdsetlayout(const Arg* arg);
 static void cmdsetmfact(const Arg* arg);
 static void cmdsetposition(const Arg* arg);
+static void cmdsendmon(const Arg* arg);
 static void cmdspawn(const Arg* arg);
 static void cmdtag(const Arg* arg);
-static void cmdtagmon(const Arg* arg);
 static void cmdtogglebar(const Arg* arg);
 static void cmdtogglefloating(const Arg* arg);
 static void cmdtogglealwaysontop(const Arg* arg);
@@ -751,6 +751,19 @@ void cmdsetposition(const Arg* arg) {
 	focus(selmon->sel);
 }
 
+void cmdsendmon(const Arg* arg) {
+	Monitor* m;
+	if (!selmon->sel)
+		return;
+	if (!mons->next)
+		return;
+	if ((m = dirtomon(arg->i)) == selmon)
+		return;
+	if (selmon == m)
+		return;
+	sendmon(selmon->sel, m, 1);
+}
+
 void cmdspawn(const Arg* arg) {
 	struct sigaction sa;
 
@@ -783,12 +796,6 @@ void cmdtag(const Arg* arg) {
 		focus(NULL);
 		arrange(selmon);
 	}
-}
-
-void cmdtagmon(const Arg* arg) {
-	if (!selmon->sel || !mons->next)
-		return;
-	sendmon(selmon->sel, dirtomon(arg->i), 0);
 }
 
 void cmdtogglebar(const Arg* arg) {
@@ -1214,7 +1221,6 @@ void applyrules(Client* c) {
 			}
 		}
 	}
-	printf("%s: %d\n", class, c->ignorehints);
 
 	for (i = 0; i < LENGTH(rules); i++) {
 		r = &rules[i];
