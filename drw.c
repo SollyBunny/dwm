@@ -1,9 +1,6 @@
 /* See LICENSE file for copyright and license details. */
 #define _DEFAULT_SOURCE
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #ifdef NODRW
 
 #include "drw.h"
@@ -33,8 +30,6 @@ Clr* drw_scm_create(const char* const clrnames[], const unsigned int alphas[], s
 
 #else
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include <X11/Xlib.h>
@@ -42,25 +37,25 @@ Clr* drw_scm_create(const char* const clrnames[], const unsigned int alphas[], s
 
 #include <Imlib2.h>
 
-#include "drw.h"
 #include "util.h"
+#include "drw.h"
 
 #define UTF_INVALID 0xFFFD
 #define UTF_SIZ 4
 
 static const unsigned char utfbyte[UTF_SIZ + 1] = { 0x80,     0,    0xC0,  0xE0,   0xF0     };
 static const unsigned char utfmask[UTF_SIZ + 1] = { 0xC0,     0x80, 0xE0,  0xF0,   0xF8     };
-static const long          utfmin [UTF_SIZ + 1] = { 0,        0,    0x80,  0x800,  0x10000  };
-static const long          utfmax [UTF_SIZ + 1] = { 0x10FFFF, 0x7F, 0x7FF, 0xFFFF, 0x10FFFF };
+static const long int      utfmin [UTF_SIZ + 1] = { 0,        0,    0x80,  0x800,  0x10000  };
+static const long int      utfmax [UTF_SIZ + 1] = { 0x10FFFF, 0x7F, 0x7FF, 0xFFFF, 0x10FFFF };
 
-static long utf8decodebyte(const char c, size_t* i) {
+static long int utf8decodebyte(const char c, size_t* i) {
 	for (*i = 0; *i < (UTF_SIZ + 1); ++(*i))
 		if (((unsigned char)c & utfmask[*i]) == utfbyte[*i])
 			return (unsigned char)c & ~utfmask[*i];
 	return 0;
 }
 
-static size_t utf8validate(long* u, size_t i) {
+static size_t utf8validate(long int* u, size_t i) {
 	if (!BETWEEN(*u, utfmin[i], utfmax[i]) || BETWEEN(*u, 0xD800, 0xDFFF))
 		*u = UTF_INVALID;
 	for (i = 1; *u > utfmax[i]; ++i)
@@ -68,7 +63,7 @@ static size_t utf8validate(long* u, size_t i) {
 	return i;
 }
 
-static size_t utf8decode(const char* c, long* u, size_t clen) {
+static size_t utf8decode(const char* c, long int* u, size_t clen) {
 	size_t i, j, len, type;
 	long udecoded;
 
@@ -267,12 +262,12 @@ Picture drw_picture_create_resized(Drw* drw, char* src, unsigned int srcw, unsig
 		Imlib_Image origin = imlib_create_image_using_data(srcw, srch, (DATA32 *)src);
 		if (!origin) return None;
 		imlib_context_set_image(origin);
-		imlib_image_set_has_alpha(1);
+		imlib_image_set_has_alpha(true);
 		Imlib_Image scaled = imlib_create_cropped_scaled_image(0, 0, srcw, srch, dstw, dsth);
 		imlib_free_image_and_decache();
 		if (!scaled) return None;
 		imlib_context_set_image(scaled);
-		imlib_image_set_has_alpha(1);
+		imlib_image_set_has_alpha(true);
 
 		XImage img = {
 			dstw, dsth, 0, ZPixmap, (char* )imlib_image_get_data_for_reading_only(),
@@ -295,7 +290,7 @@ Picture drw_picture_create_resized(Drw* drw, char* src, unsigned int srcw, unsig
 	return pic;
 }
 
-void drw_rect(Drw* drw, int x, int y, unsigned int w, unsigned int h, int filled, int invert) {
+void drw_rect(Drw* drw, int x, int y, unsigned int w, unsigned int h, bool filled, bool invert) {
 	if (!drw || !drw->scheme)
 		return;
 	XSetForeground(drw->dpy, drw->gc, invert ? drw->scheme[ColBg].pixel : drw->scheme[ColFg].pixel);
@@ -305,13 +300,13 @@ void drw_rect(Drw* drw, int x, int y, unsigned int w, unsigned int h, int filled
 		XDrawRectangle(drw->dpy, drw->drawable, drw->gc, x, y, w - 1, h - 1);
 }
 
-int drw_text(Drw* drw, int x, int y, unsigned int w, unsigned int h, unsigned int lpad, const char* text, int invert) {
+int drw_text(Drw* drw, int x, int y, unsigned int w, unsigned int h, unsigned int lpad, const char* text, bool invert) {
 	int ty, ellipsis_x = 0;
 	unsigned int tmpw, ew, ellipsis_w = 0, ellipsis_len, hash, h0, h1;
 	XftDraw *d = NULL;
 	Fnt* usedfont, *curfont, *nextfont;
 	int utf8strlen, utf8charlen, render = x || y || w || h;
-	long utf8codepoint = 0;
+	long int utf8codepoint = 0;
 	const char* utf8str;
 	FcCharSet *fccharset;
 	FcPattern* fcpattern;
@@ -319,13 +314,13 @@ int drw_text(Drw* drw, int x, int y, unsigned int w, unsigned int h, unsigned in
 	XftResult result;
 	int charexists = 0, overflow = 0;
 	/* keep track of a couple codepoints for which we have no match. */
-	static unsigned int nomatches[128], ellipsis_width;
+	static unsigned int nomatches[64], ellipsis_width;
 
 	if (!drw || (render && (!drw->scheme || !w)) || !text || !drw->fonts)
 		return 0;
 
 	if (!render) {
-		w = invert ? invert : ~invert;
+		w = invert ? 1 : ~0;
 	} else {
 		XSetForeground(drw->dpy, drw->gc, drw->scheme[invert ? ColFg : ColBg].pixel);
 		XFillRectangle(drw->dpy, drw->drawable, drw->gc, x, y, w, h);
@@ -383,8 +378,7 @@ int drw_text(Drw* drw, int x, int y, unsigned int w, unsigned int h, unsigned in
 		if (utf8strlen) {
 			if (render) {
 				ty = y + (h - usedfont->h) / 2 + usedfont->xfont->ascent;
-				XftDrawStringUtf8(d, &drw->scheme[invert ? ColBg : ColFg],
-				                  usedfont->xfont, x, ty, (XftChar8 *)utf8str, utf8strlen);
+				XftDrawStringUtf8(d, &drw->scheme[invert ? ColBg : ColFg], usedfont->xfont, x, ty, (XftChar8 *)utf8str, utf8strlen);
 			}
 			x += ew;
 			w -= ew;

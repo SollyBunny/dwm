@@ -1,5 +1,5 @@
 # dwm version
-VERSION = 6.5
+VERSION = 6.5-solly
 
 PREFIX = /usr/local
 MANPREFIX = ${PREFIX}/share/man

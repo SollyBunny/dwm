@@ -60,8 +60,8 @@ void drw_setscheme(Drw* drw, Clr* scm);
 Picture drw_picture_create_resized(Drw* drw, char* src, unsigned int src_w, unsigned int src_h, unsigned int dst_w, unsigned int dst_h);
 
 /* Drawing functions */
-void drw_rect(Drw* drw, int x, int y, unsigned int w, unsigned int h, int filled, int invert);
-int drw_text(Drw* drw, int x, int y, unsigned int w, unsigned int h, unsigned int lpad, const char* text, int invert);
+void drw_rect(Drw* drw, int x, int y, unsigned int w, unsigned int h, bool filled, bool invert);
+int drw_text(Drw* drw, int x, int y, unsigned int w, unsigned int h, unsigned int lpad, const char* text, bool invert);
 void drw_pic(Drw* drw, int x, int y, unsigned int w, unsigned int h, Picture pic);
 
 /* Map functions */

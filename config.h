@@ -1,23 +1,24 @@
 /* See LICENSE file for copyright and license details. */
 
 /* focus rules */
-static const unsigned int focusonhover = 0;    /* 0 means focus only on click, otherwise */
-static const unsigned int focusonwheel = 0;    /* if focusonhover is 0, whether to count scrolling as click */
-static const unsigned int focusmononhover = 1; /* 0 means focus only on click, otherwise */
-static const unsigned int focusmononwheel = 0; /* if focusmononhover is 0, whether to count scrolling as click */
-static const unsigned int resizemousewarp = 0; /* if 1 warp pointer to corner when resizing */
+static const bool focusonhover      = 0;    /* 0 means focus only on click, otherwise */
+static const bool focusonwheel      = 0;    /* if focusonhover is 0, whether to count scrolling as click */
+static const bool focusmononhover   = 1;    /* 0 means focus only on click, otherwise */
+static const bool focusmononwheel   = 0;    /* if focusmononhover is 0, whether to count scrolling as click */
+static const bool resizemousewarp   = 0;    /* if 1 warp pointer to corner when resizing */
 
 /* layout */
-static const unsigned int gapwindow   = 10;  /* gaps between windows (in layouts) */
-static const unsigned int gapbar      = 10;  /* gap between bar and window area edge */
-static const unsigned int gapedge     = 10;  /* gap between windows and window area edge (in layouts) */
-static const unsigned int snap        = 5;   /* pixels away from snap location to snap to */
-static const float opacityfocus       = 1.0; /* opacity of focused window (set both to -1 to disable) */
-static const float opacityunfocus     = 0.9; /* opacity of unfocused window */
+static const unsigned int gapwindow = 10;   /* gaps between windows (in layouts) */
+static const unsigned int gapbar    = 10;   /* gap between bar and window area edge */
+static const unsigned int gapedge   = 10;   /* gap between windows and window area edge (in layouts) */
+static const unsigned int snap      = 5;    /* pixels away from snap location to snap to */
+static const float opacityfocus     = 1.0;  /* opacity of focused window (set both to -1 to disable) */
+static const float opacityunfocus   = 0.9;  /* opacity of unfocused window */
+static const bool opacityfullscreen = 1.0;  /* opacity of fullscreen windows, focused or not (set to -1 to disable) */
 
-static const float mfact              = 0.55; /* factor of master area size [0.05..0.95] */
-static const int nmaster              = 1;    /* number of clients in master area */
-static const int resizehints          = 1;    /* 1 means respect size hints in tiled resizals */
+static const float mfact            = 0.55; /* factor of master area size [0.05..0.95] */
+static const int nmaster            = 1;    /* number of clients in master area */
+static const int resizehints        = 1;    /* 1 means respect size hints in tiled resizals */
 
 static const char* ignorehintsmatch[] = { "steam", "Steam" };
 static const char* ignorehintscontains[] = { "steam_app_", "osu", "VSC", "Chrom", "iscord", "manfm" };
@@ -33,9 +34,9 @@ static const Layout layouts[] = {
 
 /* bar */
 static const char broken[] = "broken";       /* text for windows with no title */
-static const int showbar              = 1;   /* 0 means no bar */
-static const int topbar               = 1;   /* 0 means bottom bar */
-#define ICONSIZE (bh * 0.6) /* icon size */
+static const bool showbar  = true;           /* false means no bar */
+static const bool topbar   = true;           /* false means bottom bar */
+#define ICONSIZE (bh * 0.6)                  /* icon size */
 static const char* tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
 /* font */
@@ -74,7 +75,7 @@ static const Rule rules[] = {
 
 /* alt tab */
 static int alt_tab_count = 0;
-static void start_alt_tab(const Arg* arg) { alt_tab_count = 0; }
+static void start_alt_tab(const Arg arg) { alt_tab_count = 0; }
 static Client *next_visible(Client *c) {
 	for(/* DO_NOTHING */; c && !ISVISIBLE(c); c = c->snext);
 	return c;
@@ -90,12 +91,13 @@ static Client *get_nth_client(int n) {
 	for (c = next_visible(selmon->stack); c && n--; c = next_visible(c->snext));
 	return c;
 }
-static void alt_tab(const Arg* arg) {
+static void alt_tab(const Arg arg) {
 	/* put all of the windows back in their original focus/stack position */
 	Client* c;
+	int i;
 	int visible = count_visible();
 	if (visible == 0) return;
-	for (int i = 0; i < alt_tab_count; ++i) {
+	for (i = 0; i < alt_tab_count; ++i) {
 		c = get_nth_client(alt_tab_count);
 		detachstack(c);
 		attachstack(c);
@@ -142,9 +144,9 @@ static const char *const autostart[] = {
 	{ MODKEY|ShiftMask,             XK_##n,     cmdtag,               { .ui = 1 << (n - 1)              } }, \
 	{ MODKEY|ControlMask,           XK_##n,     cmdtoggleview,        { .ui = 1 << (n - 1)              } }, \
 	{ MODKEY|ShiftMask|ControlMask, XK_##n,     cmdtoggletag,         { .ui = 1 << (n - 1)              } }, \
-	{ MODKEY|AltMask,               XK_##n,     cmdsendmon,           { .i  = n                         } },
+	{ MODKEY|AltMask,               XK_##n,     cmdsendmon,           { .i  = n                         } }
 static const Key keys[] = {
-	BINDTAG(1) BINDTAG(2) BINDTAG(3) BINDTAG(4) BINDTAG(5) BINDTAG(6) BINDTAG(7) BINDTAG(8) BINDTAG(9)
+	BINDTAG(1), BINDTAG(2), BINDTAG(3), BINDTAG(4), BINDTAG(5), BINDTAG(6), BINDTAG(7), BINDTAG(8), BINDTAG(9),
 	/* modifier                     key         function              argument */
 	
 	{ MODKEY,                       XK_t,       cmdspawn,             { .v = termcmd                    } },
@@ -159,8 +161,8 @@ static const Key keys[] = {
 	{ 0,                            XK_Super_L, start_alt_tab,        { 0                               } },
 	{ MODKEY,                       XK_Tab,     alt_tab,              { 0                               } },
 	
-	{ MODKEY,                       XK_space,   cmdtogglealwaysontop, { .ui = 0                         } },
-	{ MODKEY|ShiftMask,             XK_space,   cmdtogglealwaysontop, { .ui = 1                         } },
+	{ MODKEY,                       XK_space,   cmdtogglealwaysontop, { .b = false                      } },
+	{ MODKEY|ShiftMask,             XK_space,   cmdtogglealwaysontop, { .b = true                       } },
 
 	{ MODKEY,                       XK_q,       cmdsetposition,       { .i = PositionNW                                } },
 	{ MODKEY|ShiftMask,             XK_q,       cmdsetposition,       { .i = PositionNW               | PositionForced } },
@@ -212,10 +214,10 @@ static const Button buttons[] = {
 	{ ClkStatusText,        0,                  Button1,        cmdspawn,          { .v = termcmd     } },
 	{ ClkStatusText,        0,                  Button2,        cmdspawn,          { .v = termcmd     } },
 	{ ClkStatusText,        0,                  Button3,        cmdspawn,          { .v = termcmd     } },
-	{ ClkClientWin,         MODKEY,             Button1,        cmdmovemouse,      { .i = 0           } },
-	{ ClkClientWin,         MODKEY,             Button3,        cmdresizemouse,    { .i = 0           } },
-	{ ClkClientWin,         MODKEY|ShiftMask,   Button1,        cmdmovemouse,      { .i = 1           } },
-	{ ClkClientWin,         MODKEY|ShiftMask,   Button3,        cmdresizemouse,    { .i = 1           } },
+	{ ClkClientWin,         MODKEY,             Button1,        cmdmovemouse,      { .i = false           } },
+	{ ClkClientWin,         MODKEY,             Button3,        cmdresizemouse,    { .i = false           } },
+	{ ClkClientWin,         MODKEY|ShiftMask,   Button1,        cmdmovemouse,      { .i = true           } },
+	{ ClkClientWin,         MODKEY|ShiftMask,   Button3,        cmdresizemouse,    { .i = true           } },
 	{ ClkClientWin,         MODKEY|ShiftMask,   Button2,        cmdtogglefloating, { 0                } },
 	{ ClkTagBar,            0,                  Button1,        cmdview,           { 0                } },
 	{ ClkTagBar,            0,                  Button3,        cmdtoggleview,     { 0                } },
