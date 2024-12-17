@@ -1,23 +1,24 @@
 /* See LICENSE file for copyright and license details. */
 
 /* focus rules */
-static const unsigned int focusonhover = 0;    /* 0 means focus only on click, otherwise */
-static const unsigned int focusonwheel = 0;    /* if focusonhover is 0, whether to count scrolling as click */
-static const unsigned int focusmononhover = 1; /* 0 means focus only on click, otherwise */
-static const unsigned int focusmononwheel = 0; /* if focusmononhover is 0, whether to count scrolling as click */
-static const unsigned int resizemousewarp = 0; /* if 1 warp pointer to corner when resizing */
+static const bool focusonhover       = 0;    /* 0 means focus only on click, otherwise */
+static const bool focusonwheel       = 0;    /* if focusonhover is 0, whether to count scrolling as click */
+static const bool focusmononhover    = 1;    /* 0 means focus only on click, otherwise */
+static const bool focusmononwheel    = 0;    /* if focusmononhover is 0, whether to count scrolling as click */
+static const bool resizemousewarp    = 0;    /* if 1 warp pointer to corner when resizing */
 
 /* layout */
-static const unsigned int gapwindow   = 10;  /* gaps between windows (in layouts) */
-static const unsigned int gapbar      = 10;  /* gap between bar and window area edge */
-static const unsigned int gapedge     = 10;  /* gap between windows and window area edge (in layouts) */
-static const unsigned int snap        = 5;   /* pixels away from snap location to snap to */
-static const float opacityfocus       = 1.0; /* opacity of focused window (set both to -1 to disable) */
-static const float opacityunfocus     = 0.9; /* opacity of unfocused window */
+static const unsigned int gapwindow  = 10;   /* gaps between windows (in layouts) */
+static const unsigned int gapbar     = 0;    /* gap between bar and window area edge */
+static const unsigned int gapedge    = 10;   /* gap between windows and window area edge (in layouts) */
+static const unsigned int snap       = 5;    /* pixels away from snap location to snap to */
+static const float opacityfocus      = 1.0;  /* opacity of focused window (set both to -1 to disable) */
+static const float opacityunfocus    = 0.9;  /* opacity of unfocused window */
+static const float opacityfullscreen = 1.0;  /* opacity of fullscreen windows, focused or not (set to -1 to disable) */
 
-static const float mfact              = 0.55; /* factor of master area size [0.05..0.95] */
-static const int nmaster              = 1;    /* number of clients in master area */
-static const int resizehints          = 1;    /* 1 means respect size hints in tiled resizals */
+static const float mfact             = 0.55; /* factor of master area size [0.05..0.95] */
+static const int nmaster             = 1;    /* number of clients in master area */
+static const int resizehints         = 1;    /* 1 means respect size hints in tiled resizals */
 
 static const char* ignorehintsmatch[] = { "steam", "Steam" };
 static const char* ignorehintscontains[] = { "steam_app_", "osu", "VSC", "Chrom", "iscord", "manfm" };
