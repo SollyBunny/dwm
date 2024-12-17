@@ -13,4 +13,3 @@ PID=$!
 XDG_SEAT="" DISPLAY=$FAKE PS1="Xephyr\$ " sh
 kill -9 $PID
 echo
-
