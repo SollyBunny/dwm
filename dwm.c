@@ -60,6 +60,14 @@
 #define TEXTW(X)                (drw_fontset_getwidth(drw, (X)))
 #define OPAQUE                  0xffU
 
+#if defined(__GNUC__) || defined(__clang__)
+    #define MAYBE_UNUSED __attribute__((unused))
+#elif defined(__cplusplus) && __cplusplus >= 201703L
+    #define MAYBE_UNUSED [[maybe_unused]]
+#else
+    #define MAYBE_UNUSED
+#endif
+
 /* enums */
 enum Cur { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
 enum Scheme { SchemeNorm, SchemeSel }; /* color schemes */
@@ -180,32 +188,32 @@ static void ltmonocle(Monitor* m, int n);
 static void ltrow(Monitor* m, int n);
 
 /* command declerations */
-static void cmdfocusclient(const Arg arg);
-static void cmdfocusmon(const Arg arg);
-static void cmdfocusstack(const Arg arg);
-static void cmdinclayout(const Arg arg);
-static void cmdincnmaster(const Arg arg);
-static void cmdkillclient(const Arg arg);
-static void cmdmovemouse(const Arg arg);
-static void cmdquit(const Arg arg);
-static void cmdresizemouse(const Arg arg);
-static void cmdsetgapwindow(const Arg arg);
-static void cmdsetgapbar(const Arg arg);
-static void cmdsetgapedge(const Arg arg);
-static void cmdsetlayout(const Arg arg);
-static void cmdsetmfact(const Arg arg);
-static void cmdsetposition(const Arg arg);
-static void cmdsendmon(const Arg arg);
-static void cmdspawn(const Arg arg);
-static void cmdtag(const Arg arg);
-static void cmdtogglebar(const Arg arg);
-static void cmdtogglefloating(const Arg arg);
-static void cmdtogglealwaysontop(const Arg arg);
-static void cmdtoggletag(const Arg arg);
-static void cmdtoggleview(const Arg arg);
-static void cmdview(const Arg arg);
-static void cmdwinview(const Arg arg);
-static void cmdzoom(const Arg arg);
+MAYBE_UNUSED static void cmdfocusclient(const Arg arg);
+MAYBE_UNUSED static void cmdfocusmon(const Arg arg);
+MAYBE_UNUSED static void cmdfocusstack(const Arg arg);
+MAYBE_UNUSED static void cmdinclayout(const Arg arg);
+MAYBE_UNUSED static void cmdincnmaster(const Arg arg);
+MAYBE_UNUSED static void cmdkillclient(const Arg arg);
+MAYBE_UNUSED static void cmdmovemouse(const Arg arg);
+MAYBE_UNUSED static void cmdquit(const Arg arg);
+MAYBE_UNUSED static void cmdresizemouse(const Arg arg);
+MAYBE_UNUSED static void cmdsetgapwindow(const Arg arg);
+MAYBE_UNUSED static void cmdsetgapbar(const Arg arg);
+MAYBE_UNUSED static void cmdsetgapedge(const Arg arg);
+MAYBE_UNUSED static void cmdsetlayout(const Arg arg);
+MAYBE_UNUSED static void cmdsetmfact(const Arg arg);
+MAYBE_UNUSED static void cmdsetposition(const Arg arg);
+MAYBE_UNUSED static void cmdsendmon(const Arg arg);
+MAYBE_UNUSED static void cmdspawn(const Arg arg);
+MAYBE_UNUSED static void cmdtag(const Arg arg);
+MAYBE_UNUSED static void cmdtogglebar(const Arg arg);
+MAYBE_UNUSED static void cmdtogglefloating(const Arg arg);
+MAYBE_UNUSED static void cmdtogglealwaysontop(const Arg arg);
+MAYBE_UNUSED static void cmdtoggletag(const Arg arg);
+MAYBE_UNUSED static void cmdtoggleview(const Arg arg);
+MAYBE_UNUSED static void cmdview(const Arg arg);
+MAYBE_UNUSED static void cmdwinview(const Arg arg);
+MAYBE_UNUSED static void cmdzoom(const Arg arg);
 
 /* event declerations */
 static void eventbuttonpress(XEvent* e);
