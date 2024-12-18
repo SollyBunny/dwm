@@ -824,7 +824,8 @@ void cmdtogglefloating(const Arg arg) {
 }
 
 void cmdtogglealwaysontop(const Arg arg) {
-	Client *c, *d;
+	Client* c;
+	Client* d;
 	if (arg.ui && arg.ui != 1)
 		c = (Client*)arg.v;
 	else if (selmon->sel)
@@ -879,7 +880,8 @@ void cmdview(const Arg arg) {
 void cmdwinview(const Arg arg) {
 	/* Selects for the view of the focused window. The list of tags */
 	/* to be displayed is matched to the focused window tag list. */
-	Window win, win_r, win_p, * win_c;
+	Window win, win_r, win_p;
+	Window* win_c;
 	unsigned nc;
 	int unused;
 	Client* c;
@@ -1484,7 +1486,8 @@ void detach(Client* c) {
 }
 
 void detachstack(Client* c) {
-	Client** tc, * t;
+	Client** tc;
+	Client* t;
 	if (!c) return;
 	for (tc = &c->mon->stack; *tc && *tc != c; tc = &(*tc)->snext);
 	*tc = c->snext;
@@ -2676,7 +2679,8 @@ void updateicon(Client* c) {
 		}
 		c->icw = icw; c->ich = ich;
 
-		unsigned int i, * bstp32 = (unsigned int*)bstp;
+		unsigned int i;
+		unsigned int* bstp32 = (unsigned int*)bstp;
 		for (sz = w * h, i = 0; i < sz; ++i) bstp32[i] = prealpha(bstp[i]);
 
 		c->icon = drw_picture_create_resized(drw, (char*)bstp, w, h, icw, ich);
