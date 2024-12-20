@@ -1,6 +1,7 @@
 /* See LICENSE file for copyright and license details. */
 
 /* focus rules */
+#include <stdio.h>
 static const bool focusonhover       = 0;    /* 0 means focus only on click, otherwise */
 static const bool focusonwheel       = 0;    /* if focusonhover is 0, whether to count scrolling as click */
 static const bool focusmononhover    = 1;    /* 0 means focus only on click, otherwise */
@@ -34,28 +35,28 @@ static const Layout layouts[] = {
 
 /* bar */
 static const char broken[] = "broken";       /* text for windows with no title */
-static const int showbar              = 1;   /* 0 means no bar */
-static const int topbar               = 1;   /* 0 means bottom bar */
-#define ICONSIZE (bh * 0.6) /* icon size */
+static const bool showbar  = true;           /* false means no bar */
+static const bool topbar   = true;           /* false means bottom bar */
+#define ICONSIZE (bh * 0.6)                  /* icon size */
 static const char* tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
 /* font */
-#define FONT_FAMILY "Times New Roman"
+#define FONT_FAMILY "Jetbrains Mono Nerd Font"
 #define FONT_SIZE "17"
 #define FONT FONT_FAMILY ":size=" FONT_SIZE
 static const char* fonts[] = { FONT };
-static const unsigned int borderwidth = 1;   /* border width of windows */
+static const unsigned int borderwidth = 1; /* border width of windows */
 static const char col_bg [] = "#000000";
-static const char col_fg [] = "#ffddff";
+static const char col_fg [] = "#0066ff";
 static const char col_txt[] = "#ffffff";
 static const unsigned int alpha = 0xff * 0.7;
 #define DMENUALPHA "178" // 0xff * 0.7
-static const char *const colors[][3]      = {
+static const char* colors[][3] = {
 	/*               fg       bg      border */
 	[SchemeNorm] = { col_txt, col_bg, col_bg },
 	[SchemeSel]  = { col_bg , col_fg, col_fg },
 };
-static const unsigned int alphas[][3]      = {
+static unsigned int alphas[][3] = {
 	/*               fg       bg      border */
 	[SchemeNorm] = { OPAQUE,  alpha,  alpha },
 	[SchemeSel]  = { OPAQUE,  alpha,  alpha },
@@ -75,7 +76,7 @@ static const Rule rules[] = {
 
 /* alt tab */
 static int alt_tab_count = 0;
-static void start_alt_tab(const Arg* arg) { alt_tab_count = 0; }
+static void start_alt_tab(const Arg arg) { alt_tab_count = 0; }
 static Client *next_visible(Client *c) {
 	for(/* DO_NOTHING */; c && !ISVISIBLE(c); c = c->snext);
 	return c;
@@ -91,12 +92,13 @@ static Client *get_nth_client(int n) {
 	for (c = next_visible(selmon->stack); c && n--; c = next_visible(c->snext));
 	return c;
 }
-static void alt_tab(const Arg* arg) {
+static void alt_tab(const Arg arg) {
 	/* put all of the windows back in their original focus/stack position */
 	Client* c;
+	int i;
 	int visible = count_visible();
 	if (visible == 0) return;
-	for (int i = 0; i < alt_tab_count; ++i) {
+	for (i = 0; i < alt_tab_count; ++i) {
 		c = get_nth_client(alt_tab_count);
 		detachstack(c);
 		attachstack(c);
@@ -108,24 +110,37 @@ static void alt_tab(const Arg* arg) {
 	restack(c->mon);
 }
 
-/* commands */
-#define TERM "xterm"
-static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
-static const char *dmenucmd[] = {
-	"dmenu_run", "-m", dmenumon,
-	"-i", "-fn", FONT,
-	"-a", DMENUALPHA,
-	"-nb", colors[SchemeNorm][1], "-nf", colors[SchemeNorm][0],
-	"-sb", colors[SchemeSel][1], "-sf", colors[SchemeSel][0],
-	"-nhb", colors[SchemeNorm][1], /* "-nhf", colors[SchemeSel][0], */
-	"-shb", colors[SchemeSel][1], /* "-shf", colors[SchemeNorm][0], */
-	NULL
-};
-static const char *termcmd[]      = { TERM,                                          NULL };
+/* dmenu */
+static void dmenu_run(const Arg arg) {
+	static char dmenumon[2] = "0";
+	static char dmenualpha[4] = "255";
+	const char* dmenucmd[] = {
+		"dmenu_run", "-m", dmenumon,
+		"-i", "-fn", fonts[0],
+		"-a", dmenualpha,
+		"-nb", colors[SchemeNorm][1], "-nf", colors[SchemeNorm][0],
+		"-sb", colors[SchemeSel][1], "-sf", colors[SchemeSel][0],
+		"-nhb", colors[SchemeNorm][1], /* "-nhf", colors[SchemeSel][0], */
+		"-shb", colors[SchemeSel][1], /* "-shf", colors[SchemeNorm][0], */
+		NULL
+	};
+	dmenumon[0] = '0' + selmon->num;
+	snprintf(dmenualpha, sizeof(dmenualpha), "%u", alphas[SchemeNorm][ColBg]);
 
-static const char *screencmd[]    = { "screenshot",                                  NULL };
-static const char *screenallcmd[] = { "screenshot", "1",                             NULL };
-static const char *xkillcmd[]     = { "xkill",                                       NULL };
+	cmdspawn((Arg){ .v = dmenucmd });
+}
+
+/* commands */
+#define TERM "term"
+static const char *termcmd[]           = { TERM,                NULL };
+static const char *brightnessupcmd[]   = { "brightness", "+10", NULL };
+static const char *brightnessdowncmd[] = { "brightness", "-10", NULL };
+static const char *volumeupcmd[]       = { "volume", "+5",      NULL };
+static const char *volumedowncmd[]     = { "volume", "-5",      NULL };
+static const char *volumemutecmd[]     = { "volume", "mute",    NULL };
+static const char *screencmd[]         = { "screenshot",        NULL };
+static const char *screenallcmd[]      = { "screenshot", "1",   NULL };
+static const char *xkillcmd[]          = { "xkill",             NULL };
 
 /* autostart */
 #define AUTOSTART "~/.dwm/autostart.sh"
@@ -136,67 +151,72 @@ static const char *const autostart[] = {
 };
 
 /* keybinds */
-
 #define MODKEY Mod4Mask
 #define AltMask Mod1Mask
 #define BINDTAG(n) \
-	{ MODKEY,                       XK_##n,     cmdview,              { .ui = 1 << (n - 1)              } }, \
-	{ MODKEY|ShiftMask,             XK_##n,     cmdtag,               { .ui = 1 << (n - 1)              } }, \
-	{ MODKEY|ControlMask,           XK_##n,     cmdtoggleview,        { .ui = 1 << (n - 1)              } }, \
-	{ MODKEY|ShiftMask|ControlMask, XK_##n,     cmdtoggletag,         { .ui = 1 << (n - 1)              } }, \
-	{ MODKEY|AltMask,               XK_##n,     cmdsendmon,           { .i  = n                         } },
+	{ MODKEY,                       XK_##n,                    cmdview,              { .ui = 1 << (n - 1)                       } }, \
+	{ MODKEY|ShiftMask,             XK_##n,                    cmdtag,               { .ui = 1 << (n - 1)                       } }, \
+	{ MODKEY|ControlMask,           XK_##n,                    cmdtoggleview,        { .ui = 1 << (n - 1)                       } }, \
+	{ MODKEY|ShiftMask|ControlMask, XK_##n,                    cmdtoggletag,         { .ui = 1 << (n - 1)                       } }, \
+	{ MODKEY|AltMask,               XK_##n,                    cmdsendmon,           { .i  = n                                  } }
 static const Key keys[] = {
-	BINDTAG(1) BINDTAG(2) BINDTAG(3) BINDTAG(4) BINDTAG(5) BINDTAG(6) BINDTAG(7) BINDTAG(8) BINDTAG(9)
-	/* modifier                     key         function              argument */
+	BINDTAG(1), BINDTAG(2), BINDTAG(3), BINDTAG(4), BINDTAG(5), BINDTAG(6), BINDTAG(7), BINDTAG(8), BINDTAG(9),
+	/* modifier                     key                        function              argument */
 	
-	{ MODKEY,                       XK_t,       cmdspawn,             { .v = termcmd                    } },
-	{ MODKEY,                       XK_r,       cmdspawn,             { .v = dmenucmd                   } },
-	{ MODKEY,                       XK_Print,   cmdspawn,             { .v = screenallcmd               } },
-	{ 0,                            XK_Print,   cmdspawn,             { .v = screencmd                  } },
+	{ MODKEY,                       XK_r,                      dmenu_run,            { 0                                        } },
+	{ MODKEY,                       XK_t,                      cmdspawn,             { .v = termcmd                             } },
+	{ MODKEY,                       XK_Print,                  cmdspawn,             { .v = screenallcmd                        } },
+	{ 0,                            XK_Print,                  cmdspawn,             { .v = screencmd                           } },
 
-	{ MODKEY|ControlMask,           XK_Delete,  cmdquit,              { 0                               } },
-	{ MODKEY,                       XK_F4,      cmdkillclient,        { 0                               } },
-	{ MODKEY|ShiftMask,             XK_F4,      cmdspawn,             { .v = xkillcmd                   } },
+	{ MODKEY|ControlMask,           XK_Delete,                 cmdquit,              { 0                                        } },
+	{ MODKEY,                       XK_F4,                     cmdkillclient,        { 0                                        } },
+	{ MODKEY|ShiftMask,             XK_F4,                     cmdspawn,             { .v = xkillcmd                            } },
 
-	{ 0,                            XK_Super_L, start_alt_tab,        { 0                               } },
-	{ MODKEY,                       XK_Tab,     alt_tab,              { 0                               } },
+	{ 0,                            XK_Super_L,                start_alt_tab,        { 0                                        } },
+	{ MODKEY,                       XK_Tab,                    alt_tab,              { 0                                        } },
 	
-	{ MODKEY,                       XK_space,   cmdtogglealwaysontop, { .ui = 0                         } },
-	{ MODKEY|ShiftMask,             XK_space,   cmdtogglealwaysontop, { .ui = 1                         } },
+	{ MODKEY,                       XK_space,                  cmdtogglealwaysontop, { .b = false                               } },
+	{ MODKEY|ShiftMask,             XK_space,                  cmdtogglealwaysontop, { .b = true                                } },
 
-	{ MODKEY,                       XK_q,       cmdsetposition,       { .i = PositionNW                                } },
-	{ MODKEY|ShiftMask,             XK_q,       cmdsetposition,       { .i = PositionNW               | PositionForced } },
-	{ MODKEY,                       XK_a,       cmdsetposition,       { .i = PositionW                                 } },
-	{ MODKEY|ShiftMask,             XK_a,       cmdsetposition,       { .i = PositionW                | PositionForced } },
-	{ MODKEY,                       XK_z,       cmdsetposition,       { .i = PositionSW                                } },
-	{ MODKEY|ShiftMask,             XK_z,       cmdsetposition,       { .i = PositionSW               | PositionForced } },
-	{ MODKEY,                       XK_w,       cmdsetposition,       { .i = PositionN                                 } },
-	{ MODKEY|ShiftMask,             XK_w,       cmdsetposition,       { .i = PositionN                | PositionForced } },
-	{ MODKEY,                       XK_s,       cmdsetposition,       { .i = PositionFill                              } },
-	{ MODKEY|ShiftMask,             XK_s,       cmdsetposition,       { .i = PositionFill             | PositionForced } },
-	{ MODKEY,                       XK_x,       cmdsetposition,       { .i = PositionS                                 } },
-	{ MODKEY|ShiftMask,             XK_x,       cmdsetposition,       { .i = PositionS                | PositionForced } },
-	{ MODKEY,                       XK_e,       cmdsetposition,       { .i = PositionNE                                } },
-	{ MODKEY|ShiftMask,             XK_e,       cmdsetposition,       { .i = PositionNE               | PositionForced } },
-	{ MODKEY,                       XK_d,       cmdsetposition,       { .i = PositionE                                 } },
-	{ MODKEY|ShiftMask,             XK_d,       cmdsetposition,       { .i = PositionE                | PositionForced } },
-	{ MODKEY,                       XK_c,       cmdsetposition,       { .i = PositionSE                                } },
-	{ MODKEY|ShiftMask,             XK_c,       cmdsetposition,       { .i = PositionSE               | PositionForced } },
-	{ MODKEY|ControlMask,           XK_s,       cmdsetposition,       { .i = PositionCenter                            } },
-	{ MODKEY|ShiftMask|ControlMask, XK_s,       cmdsetposition,       { .i = PositionCenter           | PositionForced } },
-	{ MODKEY|ShiftMask,             XK_s,       cmdsetposition,       { .i = PositionFullscreen       | PositionForced } },
+	{ 0,                            XF86XK_MonBrightnessUp,    cmdspawn,             { .v = brightnessupcmd                     } },
+	{ 0,                            XF86XK_MonBrightnessDown,  cmdspawn,             { .v = brightnessdowncmd                   } },
+	{ 0,                            XF86XK_AudioLowerVolume,   cmdspawn,             { .v = volumeupcmd                         } },
+	{ 0,                            XF86XK_AudioRaiseVolume,   cmdspawn,             { .v = volumedowncmd                       } },
+	{ 0,                            XF86XK_AudioMute,          cmdspawn,             { .v = volumemutecmd                       } },
 
-	{ MODKEY|ShiftMask,             XK_F1,      cmdsetgapwindow,      { .i = -10                        } },
-	{ MODKEY|ShiftMask,             XK_F2,      cmdsetgapbar,         { .i = -10                        } },
-	{ MODKEY|ShiftMask,             XK_F3,      cmdsetgapedge,        { .i = -10                        } },
-	{ MODKEY|ControlMask,           XK_F1,      cmdsetgapwindow,      { .i = 10                         } },
-	{ MODKEY|ControlMask,           XK_F2,      cmdsetgapbar,         { .i = 10                         } },
-	{ MODKEY|ControlMask,           XK_F3,      cmdsetgapedge,        { .i = 10                         } },
+	{ MODKEY,                       XK_q,                      cmdsetposition,       { .i = PositionNW                          } },
+	{ MODKEY|ShiftMask,             XK_q,                      cmdsetposition,       { .i = PositionNW         | PositionForced } },
+	{ MODKEY,                       XK_a,                      cmdsetposition,       { .i = PositionW                           } },
+	{ MODKEY|ShiftMask,             XK_a,                      cmdsetposition,       { .i = PositionW          | PositionForced } },
+	{ MODKEY,                       XK_z,                      cmdsetposition,       { .i = PositionSW                          } },
+	{ MODKEY|ShiftMask,             XK_z,                      cmdsetposition,       { .i = PositionSW         | PositionForced } },
+	{ MODKEY,                       XK_w,                      cmdsetposition,       { .i = PositionN                           } },
+	{ MODKEY|ShiftMask,             XK_w,                      cmdsetposition,       { .i = PositionN          | PositionForced } },
+	{ MODKEY,                       XK_s,                      cmdsetposition,       { .i = PositionFill                        } },
+	{ MODKEY|ShiftMask,             XK_s,                      cmdsetposition,       { .i = PositionFill       | PositionForced } },
+	{ MODKEY,                       XK_x,                      cmdsetposition,       { .i = PositionS                           } },
+	{ MODKEY|ShiftMask,             XK_x,                      cmdsetposition,       { .i = PositionS          | PositionForced } },
+	{ MODKEY,                       XK_e,                      cmdsetposition,       { .i = PositionNE                          } },
+	{ MODKEY|ShiftMask,             XK_e,                      cmdsetposition,       { .i = PositionNE         | PositionForced } },
+	{ MODKEY,                       XK_d,                      cmdsetposition,       { .i = PositionE                           } },
+	{ MODKEY|ShiftMask,             XK_d,                      cmdsetposition,       { .i = PositionE          | PositionForced } },
+	{ MODKEY,                       XK_c,                      cmdsetposition,       { .i = PositionSE                          } },
+	{ MODKEY|ShiftMask,             XK_c,                      cmdsetposition,       { .i = PositionSE         | PositionForced } },
+	{ MODKEY|ControlMask,           XK_s,                      cmdsetposition,       { .i = PositionCenter                      } },
+	{ MODKEY|ShiftMask|ControlMask, XK_s,                      cmdsetposition,       { .i = PositionCenter     | PositionForced } },
+	{ MODKEY|ShiftMask,             XK_s,                      cmdsetposition,       { .i = PositionFullscreen | PositionForced } },
 
-	{ MODKEY|ShiftMask,             XK_F4,      cmdsetmfact,          { .f = -0.05                      } },
-	{ MODKEY|ShiftMask,             XK_F5,      cmdincnmaster,        { .i = -1                         } },
-	{ MODKEY|ControlMask,           XK_F4,      cmdsetmfact,          { .f = 0.05                       } },
-	{ MODKEY|ControlMask,           XK_F5,      cmdincnmaster,        { .i = 1                          } }
+	{ MODKEY|ShiftMask,             XK_F1,                     cmdsetgapwindow,      { .i = -10                                 } },
+	{ MODKEY|ShiftMask,             XK_F2,                     cmdsetgapbar,         { .i = -10                                 } },
+	{ MODKEY|ShiftMask,             XK_F3,                     cmdsetgapedge,        { .i = -10                                 } },
+	{ MODKEY|ControlMask,           XK_F1,                     cmdsetgapwindow,      { .i = 10                                  } },
+	{ MODKEY|ControlMask,           XK_F2,                     cmdsetgapbar,         { .i = 10                                  } },
+	{ MODKEY|ControlMask,           XK_F3,                     cmdsetgapedge,        { .i = 10                                  } },
+
+	{ MODKEY|ShiftMask,             XK_F4,                     cmdsetmfact,          { .f = -0.05                               } },
+	{ MODKEY|ShiftMask,             XK_F5,                     cmdincnmaster,        { .i = -1                                  } },
+	{ MODKEY|ControlMask,           XK_F4,                     cmdsetmfact,          { .f = 0.05                                } },
+	{ MODKEY|ControlMask,           XK_F5,                     cmdincnmaster,        { .i = 1                                   } }
 
 };
 
@@ -214,10 +234,10 @@ static const Button buttons[] = {
 	{ ClkStatusText,        0,                  Button1,        cmdspawn,          { .v = termcmd     } },
 	{ ClkStatusText,        0,                  Button2,        cmdspawn,          { .v = termcmd     } },
 	{ ClkStatusText,        0,                  Button3,        cmdspawn,          { .v = termcmd     } },
-	{ ClkClientWin,         MODKEY,             Button1,        cmdmovemouse,      { .i = 0           } },
-	{ ClkClientWin,         MODKEY,             Button3,        cmdresizemouse,    { .i = 0           } },
-	{ ClkClientWin,         MODKEY|ShiftMask,   Button1,        cmdmovemouse,      { .i = 1           } },
-	{ ClkClientWin,         MODKEY|ShiftMask,   Button3,        cmdresizemouse,    { .i = 1           } },
+	{ ClkClientWin,         MODKEY,             Button1,        cmdmovemouse,      { .i = false       } },
+	{ ClkClientWin,         MODKEY,             Button3,        cmdresizemouse,    { .i = false       } },
+	{ ClkClientWin,         MODKEY|ShiftMask,   Button1,        cmdmovemouse,      { .i = true        } },
+	{ ClkClientWin,         MODKEY|ShiftMask,   Button3,        cmdresizemouse,    { .i = true        } },
 	{ ClkClientWin,         MODKEY|ShiftMask,   Button2,        cmdtogglefloating, { 0                } },
 	{ ClkTagBar,            0,                  Button1,        cmdview,           { 0                } },
 	{ ClkTagBar,            0,                  Button3,        cmdtoggleview,     { 0                } },

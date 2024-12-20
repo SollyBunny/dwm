@@ -528,7 +528,8 @@ void cmdfocusstack(const Arg arg) {
 }
 
 void cmdinclayout(const Arg arg) {
-	int n = arg.i, i;
+	int n = arg.i;
+	int i;
 	for (i = 0; i < abs(n); ++i) {
 		if (n < 0) {
 			if (selmon->lt[selmon->sellt] == layouts)
@@ -773,9 +774,6 @@ void cmdsendmon(const Arg arg) {
 
 void cmdspawn(const Arg arg) {
 	struct sigaction sa;
-
-	if ((char**)arg.v == (char**)dmenucmd)
-		dmenumon[0] = '0' + selmon->num;
 
 	if (fork() == 0) {
 		char** p;
@@ -2809,10 +2807,25 @@ void xinitvisual() {
 }
 
 int main(int argc, char* argv[]) {
-	if (argc == 2 && !strcmp("-v", argv[1]))
-		die("dwm-"VERSION);
-	else if (argc != 1)
-		die("usage: dwm [-v]");
+	int i;
+	for (i = 1; i < argc; i++) {
+		if (!strcmp(argv[i], "-fn")) /* font or font set */
+			fonts[0] = argv[++i];
+		else if (!strcmp(argv[i], "-a"))
+			alphas[SchemeNorm][ColBg] = alphas[SchemeNorm][ColBorder] = alphas[SchemeSel][ColBg] = alphas[SchemeSel][ColBorder] = atoi(argv[++i]);
+		else if (!strcmp(argv[i], "-bg")) /* background color */
+			colors[SchemeNorm][ColBg] = colors[SchemeNorm][ColBorder] = colors[SchemeSel][ColFg] = argv[++i];
+		else if (!strcmp(argv[i], "-fg")) /* foreground color */
+			colors[SchemeSel][ColBg] = colors[SchemeSel][ColBorder] = argv[++i];
+		else if (!strcmp(argv[i], "-txt")) /* text color */
+			colors[SchemeSel][ColFg] = argv[++i];
+		else if (!strcmp(argv[i], "-v"))
+			die("dwm-" VERSION);
+		else
+			die("usage: dwm [-v] [-fn font] [-a alpha 0-255]\n" \
+				"           [-bg color] [-fg color] [-txt color]");
+	}
+
 	if (!setlocale(LC_CTYPE, "") || !XSupportsLocale())
 		fputs("warning: no locale support\n", stderr);
 	if (!(dpy = XOpenDisplay(NULL)))

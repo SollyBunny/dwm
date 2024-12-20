@@ -1,6 +1,7 @@
 /* See LICENSE file for copyright and license details. */
 
 /* focus rules */
+#include <stdio.h>
 static const bool focusonhover       = 0;    /* 0 means focus only on click, otherwise */
 static const bool focusonwheel       = 0;    /* if focusonhover is 0, whether to count scrolling as click */
 static const bool focusmononhover    = 1;    /* 0 means focus only on click, otherwise */
@@ -44,18 +45,18 @@ static const char* tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 #define FONT_SIZE "17"
 #define FONT FONT_FAMILY ":size=" FONT_SIZE
 static const char* fonts[] = { FONT };
-static const unsigned int borderwidth = 1;   /* border width of windows */
+static const unsigned int borderwidth = 1; /* border width of windows */
 static const char col_bg [] = "#000000";
-static const char col_fg [] = "#ffddff";
+static const char col_fg [] = "#0066ff";
 static const char col_txt[] = "#ffffff";
 static const unsigned int alpha = 0xff * 0.7;
 #define DMENUALPHA "178" // 0xff * 0.7
-static const char *const colors[][3]      = {
+static const char* colors[][3] = {
 	/*               fg       bg      border */
 	[SchemeNorm] = { col_txt, col_bg, col_bg },
 	[SchemeSel]  = { col_bg , col_fg, col_fg },
 };
-static const unsigned int alphas[][3]      = {
+static unsigned int alphas[][3] = {
 	/*               fg       bg      border */
 	[SchemeNorm] = { OPAQUE,  alpha,  alpha },
 	[SchemeSel]  = { OPAQUE,  alpha,  alpha },
@@ -109,19 +110,28 @@ static void alt_tab(const Arg arg) {
 	restack(c->mon);
 }
 
+/* dmenu */
+static void dmenu_run(const Arg arg) {
+	static char dmenumon[2] = "0";
+	static char dmenualpha[4] = "255";
+	const char* dmenucmd[] = {
+		"dmenu_run", "-m", dmenumon,
+		"-i", "-fn", fonts[0],
+		"-a", dmenualpha,
+		"-nb", colors[SchemeNorm][1], "-nf", colors[SchemeNorm][0],
+		"-sb", colors[SchemeSel][1], "-sf", colors[SchemeSel][0],
+		"-nhb", colors[SchemeNorm][1], /* "-nhf", colors[SchemeSel][0], */
+		"-shb", colors[SchemeSel][1], /* "-shf", colors[SchemeNorm][0], */
+		NULL
+	};
+	dmenumon[0] = '0' + selmon->num;
+	snprintf(dmenualpha, sizeof(dmenualpha), "%u", alphas[SchemeNorm][ColBg]);
+
+	cmdspawn((Arg){ .v = dmenucmd });
+}
+
 /* commands */
 #define TERM "term"
-static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
-static const char *dmenucmd[] = {
-	"dmenu_run", "-m", dmenumon,
-	"-i", "-fn", FONT,
-	"-a", DMENUALPHA,
-	"-nb", colors[SchemeNorm][1], "-nf", colors[SchemeNorm][0],
-	"-sb", colors[SchemeSel][1], "-sf", colors[SchemeSel][0],
-	"-nhb", colors[SchemeNorm][1], /* "-nhf", colors[SchemeSel][0], */
-	"-shb", colors[SchemeSel][1], /* "-shf", colors[SchemeNorm][0], */
-	NULL
-};
 static const char *termcmd[]           = { TERM,                NULL };
 static const char *brightnessupcmd[]   = { "brightness", "+10", NULL };
 static const char *brightnessdowncmd[] = { "brightness", "-10", NULL };
@@ -153,8 +163,8 @@ static const Key keys[] = {
 	BINDTAG(1), BINDTAG(2), BINDTAG(3), BINDTAG(4), BINDTAG(5), BINDTAG(6), BINDTAG(7), BINDTAG(8), BINDTAG(9),
 	/* modifier                     key                        function              argument */
 	
+	{ MODKEY,                       XK_r,                      dmenu_run,            { 0                                        } },
 	{ MODKEY,                       XK_t,                      cmdspawn,             { .v = termcmd                             } },
-	{ MODKEY,                       XK_r,                      cmdspawn,             { .v = dmenucmd                            } },
 	{ MODKEY,                       XK_Print,                  cmdspawn,             { .v = screenallcmd                        } },
 	{ 0,                            XK_Print,                  cmdspawn,             { .v = screencmd                           } },
 
