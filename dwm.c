@@ -555,7 +555,10 @@ void cmdincnmaster(const Arg arg) {
 }
 
 void cmdkillclient(const Arg arg) {
-	killclient(selmon->sel);
+	if (arg.v)
+		killclient((Client*)arg.v);
+	else
+		killclient(selmon->sel);
 }
 
 void cmdmovemouse(const Arg arg) {
