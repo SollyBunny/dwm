@@ -2603,7 +2603,7 @@ void updatesizehints(Client* c) {
 void updatestatus(void) {
 	#ifndef NODRW
 		if (!gettextprop(root, XA_WM_NAME, stext, sizeof(stext)))
-			strcpy(stext, "dwm-"VERSION);
+			strcpy(stext, "dwm-" VERSION);
 		drawbar(selmon);
 	#endif /* NODRW */
 }
