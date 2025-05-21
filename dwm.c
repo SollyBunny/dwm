@@ -265,7 +265,6 @@ static Client* nexttiled(Client* c);
 static void opacity(Client* c, float opacity);
 static void opacitywin(Window w, float opacity);
 static void pop(Client* c);
-/* static Monitor* recttomon(int x, int y, int w, int h); */
 static Monitor* postomon(int x, int y);
 static void resize(Client* c, int x, int y, int w, int h, bool interact);
 static void resizeclient(Client* c, int x, int y, int w, int h);
@@ -1935,18 +1934,6 @@ void pop(Client* c) {
 	focus(c);
 	arrange(c->mon);
 }
-
-/* Monitor* recttomon(int x, int y, int w, int h) {
-	Monitor* m;
-	Monitor* r = selmon;
-	int a, area = 0;
-	for (m = mons; m; m = m->next)
-		if ((a = INTERSECT(x, y, w, h, m)) > area) {
-			area = a;
-			r = m;
-		}
-	return r;
-} */
 
 Monitor* postomon(int x, int y) {
 	Monitor* m = selmon;
