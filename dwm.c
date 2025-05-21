@@ -478,7 +478,6 @@ void ltgrid(Monitor* m, int n) {
 		}
 		resize(c, x, y, ww - m->gapwindow - 2 * c->bw, wh - m->gapwindow - 2 * c->bw, false);
 	}
-
 }
 
 void ltmonocle(Monitor* m, int n) {
@@ -694,7 +693,6 @@ void cmdresizemouse(const Arg arg) {
 	} while (ISVISIBLE(c) && ev.type != ButtonRelease);
 	XUngrabPointer(dpy, CurrentTime);
 	while (XCheckMaskEvent(dpy, EnterWindowMask, &ev));
-
 }
 
 void cmdquit(const Arg arg) {
@@ -1341,7 +1339,6 @@ void arrangemon(Monitor* m) {
 	}
 	if (n && m->lt[m->sellt]->arrange)
 		m->lt[m->sellt]->arrange(m, n);
-
 }
 
 void attach(Client* c) {
@@ -1422,7 +1419,6 @@ void cleanup(void) {
 	XSync(dpy, false);
 	XSetInputFocus(dpy, PointerRoot, RevertToPointerRoot, CurrentTime);
 	XDeleteProperty(dpy, root, netatom[NetActiveWindow]);
-
 }
 
 void cleanupmon(Monitor* mon) {
