@@ -433,7 +433,7 @@ void ltgrid(Monitor* m, int n) {
 		return;
 	}
 
-	while (1) {
+	while (true) {
 		if (a * a >= n) {
 			tilex = tiley = a;
 			break;
