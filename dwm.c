@@ -519,10 +519,8 @@ void cmdfocusstack(const Arg arg) {
 				if (ISVISIBLE(i))
 					c = i;
 	}
-	if (c) {
+	if (c)
 		focus(c);
-		restack(selmon);
-	}
 }
 
 void cmdinclayout(const Arg arg) {
@@ -598,7 +596,6 @@ void cmdmovemouse(const Arg arg) {
 				resizeclient(c, nx, ny, c->w, c->h);
 				if (!moved) {
 					moved = 1;
-					c->isalwaysontop = 0;
 					setposition(c, PositionNone, false);
 				}
 			}
@@ -675,7 +672,6 @@ void cmdresizemouse(const Arg arg) {
 						);
 					if (!moved || c->position != PositionNone) {
 						moved = true;
-						c->isalwaysontop = false;
 						setposition(c, PositionNone, false);
 					}
 				}
@@ -1693,7 +1689,8 @@ void focus(Client* c) {
 			opacity(c, opacityfocus);
 		XSetWindowBorder(dpy, c->win, scheme[SchemeSel][ColBorder].pixel);
 		setfocus(c);
-		XRaiseWindow(dpy, c->win);
+		selmon->sel = c;
+		restack(c->mon);
 	} else {
 		#ifdef NODRW
 			XSetInputFocus(dpy, root, RevertToPointerRoot, CurrentTime);
@@ -1701,8 +1698,8 @@ void focus(Client* c) {
 			XSetInputFocus(dpy, selmon->barwin, RevertToPointerRoot, CurrentTime);
 		#endif /* NODRW */
 		XDeleteProperty(dpy, root, netatom[NetActiveWindow]);
+		selmon->sel = NULL;
 	}
-	selmon->sel = c;
 	drawbars();
 }
 
