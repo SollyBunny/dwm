@@ -424,8 +424,11 @@ void ltrow(Monitor* m, int n) {
 }
 
 void ltgrid(Monitor* m, int n) {
-	unsigned int tilex, tiley, x, y, ww, wh, i, a = 1;
 	Client* c;
+	unsigned int x, y, w, h, i, odd;
+	unsigned int tilex = 1, tiley = n;
+	unsigned int best = (int)1e10, diff;
+	const float aspect = (float)m->ww / (float)m->wh;
 
 	if (n == 1) {
 		c = nexttiled(m->clients);
@@ -433,50 +436,43 @@ void ltgrid(Monitor* m, int n) {
 		return;
 	}
 
-	while (true) {
-		if (a * a >= n) {
-			tilex = tiley = a;
-			break;
+	for (y = 1; y <= n; ++y) {
+		x = (n + y - 1) / y; /* ceil(n / y) */
+		if (x * y < n || x * y >= n + x || x * y >= n + y)
+			continue;
+		diff = abs((int)(((float)x / (float)y - aspect) * 1000));
+		if (diff < best) {
+			best = diff;
+			tilex = x;
+			tiley = y;
 		}
-		if (a * (a + 1) >= n) {
-			if (m->ww > m->wh) {
-				tilex = a + 1;
-				tiley = a;
-			} else {
-				tilex = a;
-				tiley = a + 1;
-			}
-			break;
-		}
-		++a;
 	}
 
-	a = n % (m->ww > m->wh ? tiley : tilex); /* point to switch to regular grid */
-	if (a == 0) {
-		a = -1;
-		ww = (m->ww + m->gapwindow) / tilex;
-		wh = (m->wh + m->gapwindow) / tiley;
-	} else  if (m->ww > m->wh) {
-		ww = (m->ww + m->gapwindow) / tilex;
-		wh = (m->wh + m->gapwindow) / a;
-	} else {
-		ww = (m->ww + m->gapwindow) / a;
-		wh = (m->wh + m->gapwindow) / tiley;
-	}
-	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), ++i) {
-		if (i == a) {
-			ww = (m->ww + m->gapwindow) / tilex;
-			wh = (m->wh + m->gapwindow) / tiley;
-			i += (m->ww > m->wh ? tiley : tilex) - a; /* complete row or column */
-		}
+	for (i = 0, c = nexttiled(m->clients); c; ++i, c = nexttiled(c->next)) {
+		w = (m->ww + m->gapwindow) / tilex;
+		h = (m->wh + m->gapwindow) / tiley;
 		if (m->ww > m->wh) {
-			x = m->wx + (i / tiley) * ww;
-			y = m->wy + (i % tiley) * wh;
+			odd = n % tiley;
+			if (odd > 0) {
+				if (i < odd)
+					h = (m->wh + m->gapwindow) / odd;
+				else if (i == odd) /* Complete row or column */
+					i += tiley - odd;
+			}
+			x = (i / tiley) * w;
+			y = (i % tiley) * h;
 		} else {
-			x = m->wx + (i % tilex) * ww;
-			y = m->wy + (i / tilex) * wh;
+			odd = n % tilex;
+			if (odd > 0) {
+				if (i < odd)
+					w = (m->ww + m->gapwindow) / odd;
+				else if (i == odd) /* Complete row or column */
+					i += tilex - odd;
+			}
+			x = (i % tilex) * w;
+			y = (i / tilex) * h;
 		}
-		resize(c, x, y, ww - m->gapwindow - 2 * c->bw, wh - m->gapwindow - 2 * c->bw, false);
+		resize(c, m->wx + x, m->wy + y, w - m->gapwindow - 2 * c->bw, h - m->gapwindow - 2 * c->bw, false);
 	}
 }
 
