@@ -427,7 +427,7 @@ void ltgrid(Monitor* m, int n) {
 	Client* c;
 	unsigned int x, y, w, h, i, odd;
 	unsigned int tilex = 1, tiley = n;
-	unsigned int best = (int)1e10, diff;
+	unsigned int bestscore = (int)1e10, score;
 	const float aspect = (float)m->ww / (float)m->wh;
 
 	if (n == 1) {
@@ -436,13 +436,17 @@ void ltgrid(Monitor* m, int n) {
 		return;
 	}
 
+	/* Figure out the "best" rows/cols for this aspect ratio */
+	/* Invalid if there are not enough spaces for windows (rows * cols < number of windows) */
+	/* Invalid if there is an extra row or column, ie there's no windows on a row or column */
 	for (y = 1; y <= n; ++y) {
 		x = (n + y - 1) / y; /* ceil(n / y) */
 		if (x * y < n || x * y >= n + x || x * y >= n + y)
 			continue;
-		diff = abs((int)(((float)x / (float)y - aspect) * 1000));
-		if (diff < best) {
-			best = diff;
+		/* Comapare aspect ratio of rows/cols to total width/total height */
+		score = abs((int)(((float)x / (float)y - aspect) * 1000));
+		if (score < bestscore) {
+			bestscore = score;
 			tilex = x;
 			tiley = y;
 		}
@@ -452,12 +456,12 @@ void ltgrid(Monitor* m, int n) {
 		w = (m->ww + m->gapwindow) / tilex;
 		h = (m->wh + m->gapwindow) / tiley;
 		if (m->ww > m->wh) {
-			odd = n % tiley;
+			odd = n % tiley; /* Number of windows on first col/row that must be stretched*/
 			if (odd > 0) {
-				if (i < odd)
-					h = (m->wh + m->gapwindow) / odd;
-				else if (i == odd) /* Complete row or column */
-					i += tiley - odd;
+				if (i < odd) /* If this window is to be stretched */
+					h = (m->wh + m->gapwindow) / odd; /* Find new dimension */
+				else if (i == odd)
+					i += tiley - odd; /* Complete row or column */
 			}
 			x = (i / tiley) * w;
 			y = (i % tiley) * h;
@@ -466,7 +470,7 @@ void ltgrid(Monitor* m, int n) {
 			if (odd > 0) {
 				if (i < odd)
 					w = (m->ww + m->gapwindow) / odd;
-				else if (i == odd) /* Complete row or column */
+				else if (i == odd)
 					i += tilex - odd;
 			}
 			x = (i % tilex) * w;
