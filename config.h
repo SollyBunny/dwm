@@ -1,7 +1,6 @@
 /* See LICENSE file for copyright and license details. */
 
 /* focus rules */
-#include <stdio.h>
 static const bool focusonhover       = 0;    /* 0 means focus only on click, otherwise */
 static const bool focusonwheel       = 0;    /* if focusonhover is 0, whether to count scrolling as click */
 static const bool focusmononhover    = 1;    /* 0 means focus only on click, otherwise */
