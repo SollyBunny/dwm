@@ -134,6 +134,8 @@ struct Client {
 	#endif /* NODRW */
 };
 
+#define KEY_NUMERIC 0xFFFFFFFF
+#define KEY_NUMERIC_SHIFT 0xFFFFFFFE
 typedef struct Key Key;
 struct Key {
 	unsigned int mod;
@@ -1131,11 +1133,19 @@ void eventfocusin(XEvent* e) {
 void eventkeypress(XEvent* e) {
 	XKeyEvent* ev = &e->xkey;
 	KeySym keysym = XkbKeycodeToKeysym(dpy, (KeyCode)ev->keycode, 0, 0);
-	for (unsigned int i = 0; i < LENGTH(keys); i++)
-		if (keysym == keys[i].keysym
-			&& CLEANMASK(keys[i].mod) == CLEANMASK(ev->state)
-			&& keys[i].func)
+	for (unsigned int i = 0; i < LENGTH(keys); i++) {
+		if (!keys[i].func) continue;
+		if (CLEANMASK(keys[i].mod) != CLEANMASK(ev->state)) continue;
+		if (keys[i].keysym == KEY_NUMERIC) {
+			if (keysym < XK_1 || keysym > XK_9) continue;
+			keys[i].func((Arg){ .i = keysym - XK_1 });
+		} else if (keys[i].keysym == KEY_NUMERIC_SHIFT) {
+			if (keysym < XK_1 || keysym > XK_9) continue;
+			keys[i].func((Arg){ .ui = 1 << (keysym - XK_1) });
+		} else if (keys[i].keysym == keysym) {
 			keys[i].func(keys[i].arg);
+		}
+	}
 }
 
 void eventmappingnotify(XEvent* e) {

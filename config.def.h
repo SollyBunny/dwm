@@ -157,15 +157,13 @@ static const char *const autostart[] = {
 /* keybinds */
 #define MODKEY Mod4Mask
 #define AltMask Mod1Mask
-#define BINDTAG(n) \
-	{ MODKEY,                       XK_##n,                    cmdview,              { .ui = 1 << (n - 1)                       } }, \
-	{ MODKEY|ShiftMask,             XK_##n,                    cmdtag,               { .ui = 1 << (n - 1)                       } }, \
-	{ MODKEY|ControlMask,           XK_##n,                    cmdtoggleview,        { .ui = 1 << (n - 1)                       } }, \
-	{ MODKEY|ShiftMask|ControlMask, XK_##n,                    cmdtoggletag,         { .ui = 1 << (n - 1)                       } }, \
-	{ MODKEY|AltMask,               XK_##n,                    cmdsendmon,           { .i  = n                                  } }
 static const Key keys[] = {
-	BINDTAG(1), BINDTAG(2), BINDTAG(3), BINDTAG(4), BINDTAG(5), BINDTAG(6), BINDTAG(7), BINDTAG(8), BINDTAG(9),
 	/* modifier                     key                        function              argument */
+	{ MODKEY,                       KEY_NUMERIC_SHIFT,         cmdview,              { 0                                        } },
+	{ MODKEY|ShiftMask,             KEY_NUMERIC_SHIFT,         cmdtag,               { 0                                        } },
+	{ MODKEY|ControlMask,           KEY_NUMERIC_SHIFT,         cmdtoggleview,        { 0                                        } },
+	{ MODKEY|ShiftMask|ControlMask, KEY_NUMERIC_SHIFT,         cmdtoggletag,         { 0                                        } },
+	{ MODKEY|AltMask,               KEY_NUMERIC,               cmdsendmon,           { 0                                        } },
 	
 	{ MODKEY,                       XK_r,                      dmenu_run,            { 0                                        } },
 	{ MODKEY,                       XK_t,                      cmdspawn,             { .v = termcmd                             } },
