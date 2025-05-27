@@ -46,6 +46,8 @@ FLAG += -g
 # FLAG += -O1 -fsanitize=address -fno-omit-frame-pointer
 # Release Flags
 FLAG += -O4
+# Small Flags
+# FLAG += -Os -s
 # Solaris Relase Flags (uncomment)
 # FLAG += -fast
 
