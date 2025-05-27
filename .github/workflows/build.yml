@@ -1,0 +1,33 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-default:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            x11proto-core-dev \
+            libx11-dev \
+            libxinerama-dev \
+            libxft-dev \
+            libfontconfig1-dev \
+            libxrender-dev \
+            libimlib2-dev
+
+      - name: Build
+        run:  make
+
+      - name: Build with NODRW = 1
+        run: |
+          sed -i 's/^NODRW = .*/NODRW = 1/' config.mk
+          make
