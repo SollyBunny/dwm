@@ -1,0 +1,13 @@
+CompileFlags:
+  Add:
+    - -xc
+    - -std=c99
+    - -D_POSIX_C_SOURCE=200809
+    - -DVERSION="version"
+    - -I/usr/include/freetype2
+    - -include <X11/Xft/Xft.h>
+    - -includeX11/Xlib.h
+    - -includestdbool.h
+    - -DXINERAMA
+    - -Wall
+    - -pedantic
