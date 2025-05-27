@@ -8,10 +8,6 @@ CC = cc
 
 NODRW = 0 # Set to 1 to disable drawing
 
-INCS = 
-LIBS = 
-FLAG = 
-
 # X11
 LIBS += -I/usr/X11R6/lib -lX11
 INCS += -L/usr/X11R6/include
