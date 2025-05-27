@@ -61,11 +61,11 @@
 #define OPAQUE                  0xffU
 
 #if defined(__GNUC__) || defined(__clang__)
-    #define MAYBE_UNUSED __attribute__((unused))
+	#define MAYBE_UNUSED __attribute__((unused))
 #elif defined(__cplusplus) && __cplusplus >= 201703L
-    #define MAYBE_UNUSED [[maybe_unused]]
+	#define MAYBE_UNUSED [[maybe_unused]]
 #else
-    #define MAYBE_UNUSED
+	#define MAYBE_UNUSED
 #endif
 
 /* enums */
@@ -222,7 +222,6 @@ static void eventconfigurenotify(XEvent* e);
 static void eventconfigurerequest(XEvent* e);
 static void eventdestroynotify(XEvent* e);
 static void evententernotify(XEvent *e);
-static void eventexpose(XEvent* e);
 static void eventfocusin(XEvent* e);
 static void eventkeypress(XEvent* e);
 static void eventmappingnotify(XEvent* e);
@@ -232,6 +231,29 @@ static void eventpropertynotify(XEvent* e);
 static void eventunmapnotify(XEvent* e);
 static void eventhandle(XEvent* ev);
 
+#ifndef NODRW
+	static void eventexpose(XEvent* e);
+#endif
+
+static void (*const eventhandler[LASTEvent]) (XEvent*) = {
+	[ButtonPress] = eventbuttonpress,
+	[ClientMessage] = eventclientmessage,
+	[ConfigureRequest] = eventconfigurerequest,
+	[ConfigureNotify] = eventconfigurenotify,
+	[DestroyNotify] = eventdestroynotify,
+	[EnterNotify] = evententernotify,
+	#ifndef NODRW
+		[Expose] = eventexpose,
+	#endif
+	[FocusIn] = eventfocusin,
+	[KeyPress] = eventkeypress,
+	[MappingNotify] = eventmappingnotify,
+	[MapRequest] = eventmaprequest,
+	[MotionNotify] = eventmotionnotify,
+	[PropertyNotify] = eventpropertynotify,
+	[UnmapNotify] = eventunmapnotify
+};
+
 /* function declarations */
 static void applyrules(Client* c);
 static int applysizehints(Client* c, int* x, int* y, int* w, int* h, bool interact);
@@ -240,7 +262,6 @@ static void arrangemon(Monitor* m);
 static void attach(Client* c);
 static void attachstack(Client* c);
 static void autostartexec(void);
-static void buttonbar(XButtonPressedEvent* ev, Arg* arg, unsigned int* click);
 static void checkotherwm(void);
 static void cleanup(void);
 static void cleanupmon(Monitor* mon);
@@ -249,8 +270,6 @@ static Monitor* createmon(void);
 static void detach(Client* c);
 static void detachstack(Client* c);
 static Monitor* dirtomon(int dir);
-static void drawbar(Monitor* m);
-static void drawbars(void);
 static void focus(Client* c);
 static void focusmon(Monitor* m, bool refocus);
 static Atom getatomprop(Client* c, Atom prop);
@@ -284,18 +303,14 @@ static void hideclient(Client* c);
 static void showhide(Client* c);
 static void togglefloating(Client* c);
 static void freeclient(Client* c);
-static void freeicon(Client* c);
 static void unfocus(Client* c, bool setfocus);
 static void unmanage(Client* c, bool destroyed);
 static void updatebarpos(Monitor* m);
-static void updatebars(void);
 static void updateclientlist(void);
 static int updategeom(void);
 static void updatenumlockmask(void);
 static void updatesizehints(Client* c);
-static void updatestatus(void);
 static void updatetitle(Client* c);
-static void updateicon(Client* c);
 static void updatewindowtype(Client* c);
 static void updatewmhints(Client* c);
 static Client* wintoclient(Window w);
@@ -303,25 +318,19 @@ static Monitor* wintomon(Window w);
 static int xerror(Display* dpy, XErrorEvent* ee);
 static int xerrordummy(Display* dpy, XErrorEvent* ee);
 static int xerrorstart(Display* dpy, XErrorEvent* ee);
-static void xinitvisual(void);
+
+#ifndef NODRW
+	static void buttonbar(XButtonPressedEvent* ev, Arg* arg, unsigned int* click);
+	static void drawbar(Monitor* m);
+	static void drawbars(void);
+	static void freeicon(Client* c);
+	static void updatebars(void);
+	static void updateicon(Client* c);
+	static void updatestatus(void);
+	static void xinitvisual(void);
+#endif /* NODRW */
 
 /* variables */
-static void (*const eventhandler[LASTEvent]) (XEvent*) = {
-	[ButtonPress] = eventbuttonpress,
-	[ClientMessage] = eventclientmessage,
-	[ConfigureRequest] = eventconfigurerequest,
-	[ConfigureNotify] = eventconfigurenotify,
-	[DestroyNotify] = eventdestroynotify,
-	[EnterNotify] = evententernotify,
-	[Expose] = eventexpose,
-	[FocusIn] = eventfocusin,
-	[KeyPress] = eventkeypress,
-	[MappingNotify] = eventmappingnotify,
-	[MapRequest] = eventmaprequest,
-	[MotionNotify] = eventmotionnotify,
-	[PropertyNotify] = eventpropertynotify,
-	[UnmapNotify] = eventunmapnotify
-};
 static unsigned int modifiers[] = { 0, LockMask, 0, 0 };
 static int screen;
 static int sw, sh; /* X display screen geometry width, height */
@@ -537,10 +546,13 @@ void cmdinclayout(const Arg arg) {
 				++selmon->lt[selmon->sellt];
 		}
 	}
-	if (selmon->sel)
+	if (selmon->sel) {
 		arrange(selmon);
-	else
-		drawbar(selmon);
+	} else {
+		#ifndef NODRW
+			drawbar(selmon);
+		#endif
+	}
 }
 
 void cmdincnmaster(const Arg arg) {
@@ -705,7 +717,9 @@ void cmdsetgapwindow(const Arg arg) {
 }
 
 void cmdsetgapbar(const Arg arg) {
-	#ifndef NODRW
+	#ifdef NODRW
+		(void)arg;
+	#else
 		if ((arg.i == 0) || (selmon->gapbar + arg.i < 0))
 			selmon->gapbar = 0;
 		else
@@ -724,7 +738,9 @@ void cmdsetgapedge(const Arg arg) {
 		selmon->gapedge += arg.i;
 	updatebarpos(selmon);
 	arrange(selmon);
-	drawbar(selmon);
+	#ifndef NODRW
+		drawbar(selmon);
+	#endif /* NODRW */
 }
 
 void cmdsetlayout(const Arg arg) {
@@ -732,10 +748,13 @@ void cmdsetlayout(const Arg arg) {
 		selmon->sellt ^= 1;
 	if (arg.v)
 		selmon->lt[selmon->sellt] = (Layout*)arg.v;
-	if (selmon->sel)
+	if (selmon->sel) {
 		arrange(selmon);
-	else
-		drawbar(selmon);
+	} else {
+		#ifndef NODRW
+			drawbar(selmon);
+		#endif /* NODRW */
+	}
 }
 
 void cmdsetmfact(const Arg arg) {
@@ -916,16 +935,19 @@ void eventbuttonpress(XEvent* e) {
 	/* focus monitor if necessary */
 	if ((m = postomon(ev->x_root, ev->y_root)) && (focusmononwheel || (ev->button != Button4 && ev->button != Button5))) {
 		focusmon(m, true);
-	#ifndef NODRW
+	}
+	{
+		#ifndef NODRW
+			if (ev->window == m->barwin) {
+				buttonbar(ev, &arg, &click);
+			} else
+		#endif /* NODRW */
+		if ((c = wintoclient(ev->window))) {
+			if (focusonwheel || (ev->button != Button4 && ev->button != Button5))
+				focus(c);
+			XAllowEvents(dpy, ReplayPointer, CurrentTime);
+			click = ClkClientWin;
 		}
-		if (ev->window == m->barwin) {
-			buttonbar(ev, &arg, &click);
-	#endif /* NODRW */
-	} else if ((c = wintoclient(ev->window))) {
-		if (focusonwheel || (ev->button != Button4 && ev->button != Button5))
-			focus(c);
-		XAllowEvents(dpy, ReplayPointer, CurrentTime);
-		click = ClkClientWin;
 	}
 	for (unsigned int i = 0; i < LENGTH(buttons); i++)
 		if (click == buttons[i].click && buttons[i].func && buttons[i].button == ev->button
@@ -975,8 +997,8 @@ void eventconfigurenotify(XEvent* e) {
 	if (updategeom() || dirty) {
 		#ifndef NODRW
 			drw_resize(drw, sw, sh);
+			updatebars();
 		#endif /* NODRW */
-		updatebars();
 		for (Monitor* m = mons; m; m = m->next) {
 			for (Client* c = m->clients; c; c = c->next) {
 				if (c->position == PositionNone)
@@ -1069,12 +1091,14 @@ void evententernotify(XEvent *e) {
 	}
 }
 
-void eventexpose(XEvent* e) {
-	XExposeEvent* ev = &e->xexpose;
-	Monitor* m;
-	if (ev->count == 0 && (m = wintomon(ev->window)))
-		drawbar(m);
-}
+#ifndef NODRW
+	void eventexpose(XEvent* e) {
+		XExposeEvent* ev = &e->xexpose;
+		Monitor* m;
+		if (ev->count == 0 && (m = wintomon(ev->window)))
+			drawbar(m);
+	}
+#endif
 
 void eventmotionnotify(XEvent *e) {
 	XMotionEvent *ev = &e->xmotion;
@@ -1134,7 +1158,9 @@ void eventpropertynotify(XEvent* e) {
 	XPropertyEvent* ev = &e->xproperty;
 	Client* c;
 	if ((ev->window == root) && (ev->atom == XA_WM_NAME)) {
-		updatestatus();
+		#ifndef NODRW
+			updatestatus();
+		#endif /* NODRW */
 	} else if (ev->state == PropertyDelete) {
 		return; /* ignore */
 	} else if ((c = wintoclient(ev->window))) {
@@ -1151,18 +1177,25 @@ void eventpropertynotify(XEvent* e) {
 				break;
 			case XA_WM_HINTS:
 				updatewmhints(c);
-				drawbars();
+				#ifndef NODRW
+					drawbars();
+				#endif /* NODRW */
 				break;
 		}
-		if (ev->atom == XA_WM_NAME || ev->atom == netatom[NetWMName]) {
-			updatetitle(c);
-			if (c == c->mon->sel)
-				drawbar(c->mon);
-		} else if (ev->atom == netatom[NetWMIcon]) {
-			updateicon(c);
-			if (c == c->mon->sel)
-				drawbar(c->mon);
-		}
+		#ifdef NODRW
+			if (ev->atom == XA_WM_NAME || ev->atom == netatom[NetWMName])
+				updatetitle(c);
+		#else
+			if (ev->atom == XA_WM_NAME || ev->atom == netatom[NetWMName]) {
+				updatetitle(c);
+				if (c == c->mon->sel)
+					drawbar(c->mon);
+			} else if (ev->atom == netatom[NetWMIcon]) {
+				updateicon(c);
+				if (c == c->mon->sel)
+					drawbar(c->mon);
+			}
+		#endif
 		if (ev->atom == netatom[NetWMWindowType])
 			updatewindowtype(c);
 	}
@@ -1487,8 +1520,8 @@ Monitor* dirtomon(int dir) {
 	return m;
 }
 
-void buttonbar(XButtonPressedEvent* ev, Arg* arg, unsigned int* click) {
-	#ifndef NODRW
+#ifndef NODRW
+	void buttonbar(XButtonPressedEvent* ev, Arg* arg, unsigned int* click) {
 		Monitor* m = selmon;
 		int x = 0, w, tw = 0;
 
@@ -1544,11 +1577,9 @@ void buttonbar(XButtonPressedEvent* ev, Arg* arg, unsigned int* click) {
 			}
 		}
 		*click = ClkStatusText;
-	#endif /* NODRW */
-}
+	}
 
-void drawbar(Monitor* m) {
-	#ifndef NODRW
+	void drawbar(Monitor* m) {
 		int indn;
 		int x = 0, w, tw = 0, ew = 0, iw = 0;
 		Client* c;
@@ -1645,15 +1676,13 @@ void drawbar(Monitor* m) {
 		drw_setscheme(drw, scheme[SchemeNorm]);
 		drw_rect(drw, x, 0, w, m->bh, true, true);
 		drw_map(drw, m->barwin, 0, 0, m->bw, m->bh);
-	#endif /* NODRW */
-}
+	}
 
-void drawbars(void) {
-	#ifndef NODRW
+	void drawbars(void) {
 		for (Monitor* m = mons; m; m = m->next)
 			drawbar(m);
-	#endif /* NODRW */
-}
+	}
+#endif /* NODRW */
 
 void focus(Client* c) {
 	if (!c || !ISVISIBLE(c))
@@ -1684,16 +1713,21 @@ void focus(Client* c) {
 		XDeleteProperty(dpy, root, netatom[NetActiveWindow]);
 		selmon->sel = NULL;
 	}
-	drawbars();
+	#ifndef NODRW
+		drawbars();
+	#endif /* NODRW */
 }
 
 void focusmon(Monitor* m, bool refocus) {
-	if (selmon == m)
+	if (selmon == m) {
 		return;
-	if (opacityfocus != opacityunfocus) {
-		opacitywin(selmon->barwin, opacityunfocus);
-		opacitywin(m->barwin, opacityfocus);
 	}
+	#ifndef NODRW
+		if (opacityfocus != opacityunfocus) {
+			opacitywin(selmon->barwin, opacityunfocus);
+			opacitywin(m->barwin, opacityfocus);
+		}
+	#endif /* NODRW */
 	if (selmon->sel)
 		unfocus(selmon->sel, false);
 	selmon = m;
@@ -1831,7 +1865,9 @@ Client* manage(Window w, XWindowAttributes* wa) {
 	c->h = c->oldh = wa->height;
 	c->oldbw = c->bw = borderwidth;
 
-	updateicon(c);
+	#ifndef NODRW
+		updateicon(c);
+	#endif /* NODRW */
 	updatetitle(c);
 
 	Client* t = NULL;
@@ -2083,7 +2119,9 @@ void restack(Monitor* m) {
 
 	XSync(dpy, false);
 
-	drawbar(m);
+	#ifndef NODRW
+		drawbar(m);
+	#endif /* NODRW */
 }
 
 void run(void) {
@@ -2116,7 +2154,9 @@ void scan(void) {
 	}
 	if (wins)
 		XFree(wins);
-	drawbars();
+	#ifndef NODRW
+		drawbars();
+	#endif
 }
 
 void sendmon(Client* c, Monitor* m, bool refocus) {
@@ -2208,7 +2248,7 @@ void setup(void) {
 			die("no fonts could be loaded.");
 		textpad = drw->fonts->h / 2;
 		bh = drw->fonts->h * 1.5;
-	#endif
+	#endif /* NODRW */
 	updategeom();
 	/* init atoms */
 	utf8string = XInternAtom(dpy, "UTF8_STRING", false);
@@ -2238,11 +2278,13 @@ void setup(void) {
 			scheme[i] = drw_scm_create(colors[i], alphas[i], 3);
 		#else
 			scheme[i] = drw_scm_create(drw, colors[i], alphas[i], 3);
-		#endif
+		#endif /* NODRW */
 	}
-	/* init bars */
-	updatebars();
-	updatestatus();
+	#ifndef NODRW
+		/* init bars */
+		updatebars();
+		updatestatus();
+	#endif
 	/* supporting window for NetWMCheck */
 	wmcheckwin = XCreateSimpleWindow(dpy, root, 0, 0, true, true, 0, 0, false);
 	XChangeProperty(dpy, wmcheckwin, netatom[NetWMCheck], XA_WINDOW, 32,
@@ -2286,19 +2328,19 @@ void hideclient(Client* c) {
 	#else
 		Monitor* m = c->mon;
 		if (sw > sh) {
-			// make window not intersect with bar
+			/* make window not intersect with bar */
 			if (m->topbar)
 				XMoveWindow(dpy, c->win, c->x, sh * 2 + c->h * 2);
 			else
 				XMoveWindow(dpy, c->win, c->x, -sh - c->h * 2);
 		} else {
-			// windows go outwards to sides
+			/* windows go outwards to sides */
 			if (c->x + c->w / 2 < m->wx + m->ww / 2)
 				XMoveWindow(dpy, c->win, sw * 2 + c->w * 2, c->y);
 			else
 				XMoveWindow(dpy, c->win, -sw - c->w * 2, c->y);
 		}
-	#endif
+	#endif /* NODRW */
 }
 
 void showhide(Client* c) {
@@ -2328,17 +2370,19 @@ void togglefloating(Client* c) {
 }
 
 void freeclient(Client* c) {
-	freeicon(c);
+	#ifndef NODRW
+		freeicon(c);
+	#endif /* NODRW */
 	free(c);
 }
 
-void freeicon(Client* c) {
-	#ifndef NODRW
+#ifndef NODRW
+	void freeicon(Client* c) {
 		if (!c->icon) return;
 		XRenderFreePicture(dpy, c->icon);
 		c->icon = None;
-	#endif
-}
+	}
+#endif /* NODRW */
 
 void unfocus(Client* c, bool setfocus) {
 	if (!c)
@@ -2380,29 +2424,29 @@ void unmanage(Client* c, bool destroyed) {
 	freeclient(c);
 }
 
-void updatebars(void) {
-	#ifndef NODRW
-	Monitor* m;
-	XSetWindowAttributes wa = {
-		.override_redirect = True,
-		.background_pixel = 0,
-		.border_pixel = 0,
-		.colormap = cmap,
-		.event_mask = ButtonPressMask | ExposureMask
-	};
-	XClassHint ch = { "dwm", "dwm" };
-	for (m = mons; m; m = m->next) {
-		if (m->barwin)
-			continue;
-		m->barwin = XCreateWindow(dpy, root, m->bx, m->by, m->bw, m->bh, 0, depth,
-			InputOutput, visual,
-			CWOverrideRedirect | CWBackPixel | CWBorderPixel | CWColormap | CWEventMask, &wa);
-		XDefineCursor(dpy, m->barwin, cursor[CurNormal]);
-		XMapRaised(dpy, m->barwin);
-		XSetClassHint(dpy, m->barwin, &ch);
+#ifndef NODRW
+	void updatebars(void) {
+		Monitor* m;
+		XSetWindowAttributes wa = {
+			.override_redirect = True,
+			.background_pixel = 0,
+			.border_pixel = 0,
+			.colormap = cmap,
+			.event_mask = ButtonPressMask | ExposureMask
+		};
+		XClassHint ch = { "dwm", "dwm" };
+		for (m = mons; m; m = m->next) {
+			if (m->barwin)
+				continue;
+			m->barwin = XCreateWindow(dpy, root, m->bx, m->by, m->bw, m->bh, 0, depth,
+				InputOutput, visual,
+				CWOverrideRedirect | CWBackPixel | CWBorderPixel | CWColormap | CWEventMask, &wa);
+			XDefineCursor(dpy, m->barwin, cursor[CurNormal]);
+			XMapRaised(dpy, m->barwin);
+			XSetClassHint(dpy, m->barwin, &ch);
+		}
 	}
-	#endif
-}
+#endif /* NODRW */
 
 void updatebarpos(Monitor* m) {
 	#ifdef NODRW
@@ -2431,7 +2475,7 @@ void updatebarpos(Monitor* m) {
 			m->wy = m->my + m->gapedge;
 			m->by = m->my + m->mh - m->bh - m->gapbar;
 		}
-	#endif
+	#endif /* NODRW */
 }
 
 void updateclientlist(void) {
@@ -2579,13 +2623,13 @@ void updatesizehints(Client* c) {
 	c->hintsvalid = true;
 }
 
-void updatestatus(void) {
-	#ifndef NODRW
+#ifndef NODRW
+	void updatestatus(void) {
 		if (!gettextprop(root, XA_WM_NAME, stext, sizeof(stext)))
 			strcpy(stext, "dwm-" VERSION);
 		drawbar(selmon);
-	#endif /* NODRW */
-}
+	}
+#endif /* NODRW */
 
 void updatetitle(Client* c) {
 	if (!gettextprop(c->win, netatom[NetWMName], c->name, sizeof c->name))
@@ -2594,8 +2638,8 @@ void updatetitle(Client* c) {
 		strcpy(c->name, broken);
 }
 
-void updateicon(Client* c) {
-	#ifndef NODRW
+#ifndef NODRW
+	void updateicon(Client* c) {
 		int format;
 		unsigned long n, extra;
 		long* p = NULL;
@@ -2648,8 +2692,8 @@ void updateicon(Client* c) {
 
 		c->icon = drw_picture_create_resized(drw, (char*)bstp, w, h, icw, ich);
 		XFree(p);
-	#endif /* NODRW */
-}
+	}
+#endif /* NODRW */
 
 void updatewindowtype(Client* c) {
 	if (getatomprop(c, netatom[NetWMState]) == netatom[NetWMFullscreen]) {

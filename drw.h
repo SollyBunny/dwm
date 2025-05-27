@@ -2,6 +2,9 @@
 enum { ColFg, ColBg, ColBorder }; /* Clr scheme index */
 
 #ifdef NODRW
+
+#include <stddef.h>
+
 typedef struct {
 	unsigned long pixel;
 } Clr;
