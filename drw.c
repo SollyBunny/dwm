@@ -16,14 +16,13 @@ void drw_clr_create(Clr* dest, const char* clrname, unsigned int alpha) {
 /* Wrapper to create color schemes. The caller has to call free(3) on the
  * returned color scheme when done using it. */
 Clr* drw_scm_create(const char* const clrnames[], const unsigned int alphas[], size_t clrcount) {
-	size_t i;
 	Clr* ret;
 
 	/* need at least two colors for a scheme */
 	if (!clrnames || clrcount < 2 || !(ret = ecalloc(clrcount, sizeof(Clr))))
 		return NULL;
 
-	for (i = 0; i < clrcount; i++)
+	for (size_t i = 0; i < clrcount; i++)
 		drw_clr_create(&ret[i], clrnames[i], alphas[i]);
 	return ret;
 }
@@ -213,14 +212,13 @@ void drw_clr_create(Drw* drw, Clr* dest, const char* clrname, unsigned int alpha
 /* Wrapper to create color schemes. The caller has to call free(3) on the
  * returned color scheme when done using it. */
 Clr* drw_scm_create(Drw* drw, const char* const clrnames[], const unsigned int alphas[], size_t clrcount) {
-	size_t i;
 	Clr* ret;
 
 	/* need at least two colors for a scheme */
 	if (!drw || !clrnames || clrcount < 2 || !(ret = ecalloc(clrcount, sizeof(XftColor))))
 		return NULL;
 
-	for (i = 0; i < clrcount; i++)
+	for (size_t i = 0; i < clrcount; i++)
 		drw_clr_create(drw, &ret[i], clrnames[i], alphas[i]);
 	return ret;
 }

@@ -75,7 +75,10 @@ static const Rule rules[] = {
 
 /* alt tab */
 static int alt_tab_count = 0;
-static void start_alt_tab(const Arg arg) { alt_tab_count = 0; }
+static void start_alt_tab(const Arg arg) {
+	(void)arg;
+	alt_tab_count = 0;
+}
 static Client *next_visible(Client *c) {
 	for(/* DO_NOTHING */; c && !ISVISIBLE(c); c = c->snext);
 	return c;
@@ -92,6 +95,7 @@ static Client *get_nth_client(int n) {
 	return c;
 }
 static void alt_tab(const Arg arg) {
+	(void)arg;
 	/* put all of the windows back in their original focus/stack position */
 	Client* c;
 	int i;
@@ -111,6 +115,7 @@ static void alt_tab(const Arg arg) {
 
 /* dmenu */
 static void dmenu_run(const Arg arg) {
+	(void)arg;
 	static char dmenumon[2] = "0";
 	static char dmenualpha[4] = "255";
 	const char* dmenucmd[] = {
@@ -217,7 +222,7 @@ static const Key keys[] = {
 	{ MODKEY|ShiftMask,             XK_F4,                     cmdsetmfact,          { .f = -0.05                               } },
 	{ MODKEY|ShiftMask,             XK_F5,                     cmdincnmaster,        { .i = -1                                  } },
 	{ MODKEY|ControlMask,           XK_F4,                     cmdsetmfact,          { .f = 0.05                                } },
-	{ MODKEY|ControlMask,           XK_F5,                     cmdincnmaster,        { .i = 1                                   } }
+	{ MODKEY|ControlMask,           XK_F5,                     cmdincnmaster,        { .i = 1                                   } },
 };
 
 /* button definitions */
