@@ -1913,7 +1913,8 @@ void opacitywin(Window w, float opacity) {
 	/* https://dwm.suckless.org/patches/clientopacity/dwm-clientopacity-6.4.diff */
 	if(opacity > 0 && opacity < 1) {
 		static long opacitydata[1];
-		opacitydata[0] = opacity * 0xffffffff;
+		int channel = opacity * (float)0xff;
+		opacitydata[0] = channel | (channel << 8) | (channel << 16) | (channel << 24);
 		XChangeProperty(dpy, w, netatom[NetWMWindowsOpacity], XA_CARDINAL,
 						32, PropModeReplace, (unsigned char*)opacitydata, true);
 	} else {
