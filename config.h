@@ -217,7 +217,7 @@ static const Key keys[] = {
 	{ MODKEY|ShiftMask,             XK_F4,                     cmdsetmfact,          { .f = -0.05                               } },
 	{ MODKEY|ShiftMask,             XK_F5,                     cmdincnmaster,        { .i = -1                                  } },
 	{ MODKEY|ControlMask,           XK_F4,                     cmdsetmfact,          { .f = 0.05                                } },
-	{ MODKEY|ControlMask,           XK_F5,                     cmdincnmaster,        { .i = 1                                   } },
+	{ MODKEY|ControlMask,           XK_F5,                     cmdincnmaster,        { .i = 1                                   } }
 };
 
 /* button definitions */

@@ -145,7 +145,7 @@ struct Key {
 typedef struct Layout Layout;
 struct Layout {
 	const char* symbol;
-	void (*arrange)(Monitor* m, int n);
+	void (*arrange)(Monitor* m, unsigned int n);
 };
 
 struct Monitor {
@@ -182,10 +182,10 @@ struct Rule {
 };
 
 /* layout declerations */
-static void ltcol(Monitor* m, int n);
-static void ltgrid(Monitor* m, int n);
-static void ltmonocle(Monitor* m, int n);
-static void ltrow(Monitor* m, int n);
+static void ltcol(Monitor* m, unsigned int n);
+static void ltgrid(Monitor* m, unsigned int n);
+static void ltmonocle(Monitor* m, unsigned int n);
+static void ltrow(Monitor* m, unsigned int n);
 
 /* command declerations */
 MAYBE_UNUSED static void cmdfocusclient(const Arg arg);
@@ -268,8 +268,8 @@ static void pop(Client* c);
 static Monitor* postomon(int x, int y);
 static void resize(Client* c, int x, int y, int w, int h, bool interact);
 static void resizeclient(Client* c, int x, int y, int w, int h);
-static void setpositionmove(Client* c, int position, bool force);
-static void setposition(Client* c, int position, bool force);
+static void setpositionmove(Client* c, enum Position position, bool force);
+static void setposition(Client* c, enum Position position, bool force);
 static void restack(Monitor* m);
 static void run(void);
 static void scan(void);
@@ -360,7 +360,7 @@ struct NumTags { char limitexceeded[LENGTH(tags) > 31 ? -1 : 1]; };
 
 /* layout implementations */
 
-void ltcol(Monitor* m, int n) {
+void ltcol(Monitor* m, unsigned int n) {
 	unsigned int i, x, y, w, h, ww, mw, nm;
 	Client* c;
 
@@ -393,7 +393,7 @@ void ltcol(Monitor* m, int n) {
 	}
 }
 
-void ltrow(Monitor* m, int n) {
+void ltrow(Monitor* m, unsigned int n) {
 	unsigned int i, nm, my, wy, mh, wh;
 	Client* c;
 
@@ -423,7 +423,7 @@ void ltrow(Monitor* m, int n) {
 	}
 }
 
-void ltgrid(Monitor* m, int n) {
+void ltgrid(Monitor* m, unsigned int n) {
 	Client* c;
 	unsigned int x, y, w, h, i, odd;
 	unsigned int tilex = 1, tiley = n;
@@ -480,8 +480,9 @@ void ltgrid(Monitor* m, int n) {
 	}
 }
 
-void ltmonocle(Monitor* m, int n) {
+void ltmonocle(Monitor* m, unsigned int n) {
 	Client* c;
+	(void)n;
 	for (c = nexttiled(m->clients); c; c = nexttiled(c->next))
 		resize(c, m->wx, m->wy, m->ww - 2 * c->bw, m->wh - 2 * c->bw, false);
 }
@@ -564,6 +565,8 @@ void cmdmovemouse(const Arg arg) {
 	XEvent ev;
 	Time lasttime = 0;
 	int moved = 0;
+
+	(void)arg;
 
 	if (!(c = selmon->sel))
 		return;
@@ -692,6 +695,7 @@ void cmdresizemouse(const Arg arg) {
 }
 
 void cmdquit(const Arg arg) {
+	(void)arg;
 	running = false;
 }
 
@@ -751,7 +755,7 @@ void cmdsetmfact(const Arg arg) {
 
 void cmdsetposition(const Arg arg) {
 	if (!selmon->sel) return;
-	setposition(selmon->sel, arg.i & (~PositionForced), (bool)(arg.i & PositionForced));
+	setposition(selmon->sel, (enum Position)arg.i & (~PositionForced), (arg.i & PositionForced) > 0);
 	focus(selmon->sel);
 }
 
@@ -800,6 +804,7 @@ void cmdtag(const Arg arg) {
 }
 
 void cmdtogglebar(const Arg arg) {
+	(void)arg;
 	#ifndef NODRW
 		selmon->showbar = !selmon->showbar;
 		updatebarpos(selmon);
@@ -814,10 +819,12 @@ void cmdtogglebar(const Arg arg) {
 }
 
 void cmdtogglefloating(const Arg arg) {
+	(void)arg;
 	togglefloating(selmon->sel);
 }
 
 void cmdtogglealwaysontop(const Arg arg) {
+	(void)arg;
 	Client* c;
 	Client* d;
 	if (arg.ui && arg.ui != 1)
@@ -880,6 +887,8 @@ void cmdwinview(const Arg arg) {
 	int unused;
 	Client* c;
 
+	(void)arg;
+
 	if (!XGetInputFocus(dpy, &win, &unused)) return;
 	while (XQueryTree(dpy, win, &win_r, &win_p, &win_c, &nc)
 		&& win_p != win_r) win = win_p;
@@ -890,6 +899,7 @@ void cmdwinview(const Arg arg) {
 }
 
 void cmdzoom(const Arg arg) {
+	(void)arg;
 	Client* c = selmon->sel;
 	if (!selmon->lt[selmon->sellt]->arrange || !c || c->position == PositionNone)
 		return;
@@ -933,7 +943,7 @@ void eventclientmessage(XEvent* e) {
 	if (!c)
 		return;
 	if (cme->message_type == netatom[NetWMState]) {
-		if (cme->data.l[1] == netatom[NetWMFullscreen] || cme->data.l[2] == netatom[NetWMFullscreen]) {
+		if ((unsigned long)cme->data.l[1] == netatom[NetWMFullscreen] || (unsigned long)cme->data.l[2] == netatom[NetWMFullscreen]) {
 			if (
 				cme->data.l[0] == 1 || /* _NET_WM_STATE_ADD    */
 				(cme->data.l[0] == 2 /* _NET_WM_STATE_TOGGLE */ && c->position != PositionFullscreen)
@@ -1795,7 +1805,7 @@ void grabbuttons(Client* c, bool focused) {
 }
 
 void grabkeys(void) {
-	unsigned int i, j, k;
+	int i, j, k;
 	int start, end, skip;
 	KeySym* syms;
 	updatenumlockmask();
@@ -1960,7 +1970,7 @@ void resizeclient(Client* c, int x, int y, int w, int h) {
 	XSync(dpy, false);
 }
 
-void setpositionmove(Client* c, int position, bool force) {
+void setpositionmove(Client* c, enum Position position, bool force) {
 	Monitor* m;
 	int mw, mh, x, y, w, h;
 	m = c->mon;
@@ -2060,7 +2070,7 @@ void setpositionmove(Client* c, int position, bool force) {
 		resize(c, x + m->wx, y + m->wy, w - c->bw * 2, h - c->bw * 2, true);
 }
 
-void setposition(Client* c, int position, bool force) {
+void setposition(Client* c, enum Position position, bool force) {
 	if (!c) return;
 	if (c->position == position) {
 		if (!force) return;
@@ -2542,7 +2552,7 @@ int updategeom(void) {
 }
 
 void updatenumlockmask(void) {
-	unsigned int i, j;
+	int i, j;
 	XModifierKeymap* modmap;
 	numlockmask = 0;
 	modmap = XGetModifierMapping(dpy);

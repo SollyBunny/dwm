@@ -38,6 +38,8 @@ FLAG += -DNODRW
 
 endif
 
+FLAG += -Wall -pedantic -Wextra
+
 # Debug Info
 FLAG += -g
 # Debug Flags
