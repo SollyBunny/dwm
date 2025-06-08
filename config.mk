@@ -6,7 +6,7 @@ MANPREFIX = ${PREFIX}/share/man
 
 CC = cc
 
-NODRW = 1
+NODRW = 0
 
 # X11
 LIBS += -I/usr/X11R6/lib -lX11
