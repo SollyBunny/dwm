@@ -21,6 +21,7 @@
 #include <signal.h>
 #include <stdarg.h>
 #include <stdint.h>
+#include <string.h>
 #include <unistd.h>
 #include <time.h>
 
@@ -570,14 +571,13 @@ void cmdkillclient(const Arg arg) {
 }
 
 void cmdmovemouse(const Arg arg) {
+	(void)arg;
 	int x, y, ocx, ocy, nx, ny;
 	Client* c;
 	Monitor* m;
 	XEvent ev;
 	Time lasttime = 0;
 	int moved = 0;
-
-	(void)arg;
 
 	if (!(c = selmon->sel))
 		return;
@@ -620,6 +620,7 @@ void cmdmovemouse(const Arg arg) {
 				(moved && c->position != PositionNone) /* something else has taken control of this window */
 			) {
 				XUngrabPointer(dpy, CurrentTime);
+				grabbedclient = NULL;
 				return;
 			}
 		}
@@ -634,6 +635,7 @@ void cmdmovemouse(const Arg arg) {
 	} else {
 		setmaster(c);
 	}
+	grabbedclient = NULL;
 }
 
 void cmdresizemouse(const Arg arg) {
@@ -648,7 +650,6 @@ void cmdresizemouse(const Arg arg) {
 	if (XGrabPointer(dpy, root, false, MOUSEMASK, GrabModeAsync, GrabModeAsync,
 		None, cursor[CurResize], CurrentTime) != GrabSuccess)
 		return;
-	grabbedclient = c;
 
 	ocx = c->x;
 	ocy = c->y;
@@ -662,6 +663,7 @@ void cmdresizemouse(const Arg arg) {
 		if (!getrootptr(&x, &y))
 			return;
 	}
+	grabbedclient = c;
 	focus(c);
 	do {
 		XNextEvent(dpy, &ev);
@@ -697,12 +699,14 @@ void cmdresizemouse(const Arg arg) {
 				(moved && c->position != PositionNone) /* something else has taken control of this window */
 			) {
 				XUngrabPointer(dpy, CurrentTime);
+				grabbedclient = NULL;
 				return;
 			}
 		}
 	} while (ISVISIBLE(c) && ev.type != ButtonRelease);
 	XUngrabPointer(dpy, CurrentTime);
 	while (XCheckMaskEvent(dpy, EnterWindowMask, &ev));
+	grabbedclient = NULL;
 }
 
 void cmdquit(const Arg arg) {
