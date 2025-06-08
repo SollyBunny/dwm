@@ -38,6 +38,7 @@ static const bool showbar  = true;           /* false means no bar */
 static const bool topbar   = true;           /* false means bottom bar */
 #define ICONSIZE (bh * 0.6)                  /* icon size */
 static const char* tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+static const bool hideemptytags = true;      /* hide unfocused tags with no windows */
 
 /* font */
 #define FONT_FAMILY "Jetbrains Mono Nerd Font"

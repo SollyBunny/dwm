@@ -1536,6 +1536,19 @@ Monitor* dirtomon(int dir) {
 		int x = 0, w, tw = 0;
 
 		for (unsigned int i = 0; i < LENGTH(tags); i++) {
+			const int mask = 1 << i;
+			const bool sel = m->tagset[m->seltags] & mask;
+			if (hideemptytags && !sel) {
+				bool haswindow = false;
+				for (Client* c = m->clients; c; c = c->next) {
+					if (c->tags & mask) {
+						haswindow = true;
+						break;
+					}
+				}
+				if (!haswindow)
+					continue;
+			}
 			tw = TEXTW(tags[i]) + textpad * 2;
 			if (tw < m->bh) tw = m->bh;
 			x += tw;
@@ -1598,7 +1611,20 @@ Monitor* dirtomon(int dir) {
 			return;
 
 		for (unsigned int i = 0; i < LENGTH(tags); i++) {
-			drw_setscheme(drw, scheme[m->tagset[m->seltags] & 1 << i ? SchemeSel : SchemeNorm]);
+			const int mask = 1 << i;
+			const bool sel = m->tagset[m->seltags] & mask;
+			if (hideemptytags && !sel) {
+				bool haswindow = false;
+				for (c = m->clients; c; c = c->next) {
+					if (c->tags & mask) {
+						haswindow = true;
+						break;
+					}
+				}
+				if (!haswindow)
+					continue;
+			}
+			drw_setscheme(drw, scheme[sel ? SchemeSel : SchemeNorm]);
 			tw = TEXTW(tags[i]) + textpad * 2;
 			if (tw < m->bh) {
 				drw_text(drw, x, 0, m->bh, m->bh, (m->bh - tw) / 2 + textpad, tags[i], false);
@@ -1607,7 +1633,7 @@ Monitor* dirtomon(int dir) {
 				drw_text(drw, x, 0, tw, m->bh, textpad, tags[i], false);
 			}
 			for (indn = 0, c = m->clients; c; c = c->next) {
-				if (c->tags & (1 << i)) {
+				if (c->tags & mask) {
 					drw_rect(drw, x + 1 + (indn * 4), m->bh - 4, 3, 3, selmon->sel == c, false);
 					indn++;
 				}
