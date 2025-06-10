@@ -534,21 +534,11 @@ void cmdfocusstack(const Arg arg) {
 }
 
 void cmdinclayout(const Arg arg) {
-	int n = arg.i;
-	int i;
-	for (i = 0; i < abs(n); ++i) {
-		if (n < 0) {
-			if (selmon->lt[selmon->sellt] == layouts)
-				selmon->lt[selmon->sellt] = layouts + LENGTH(layouts) - 1;
-			else
-				--selmon->lt[selmon->sellt];
-		} else {
-			if (selmon->lt[selmon->sellt] == layouts + LENGTH(layouts) - 1)
-				selmon->lt[selmon->sellt] = layouts;
-			else
-				++selmon->lt[selmon->sellt];
-		}
-	}
+	const int oldindex = selmon->lt[selmon->sellt] - layouts;
+	const int newindex = (((oldindex + arg.i) % LENGTH(layouts)) + LENGTH(layouts)) % LENGTH(layouts);
+	if (oldindex == newindex)
+		return;
+	selmon->lt[selmon->sellt] = &layouts[newindex];
 	if (selmon->sel) {
 		arrange(selmon);
 	} else {
@@ -933,7 +923,7 @@ void cmdzoom(const Arg arg) {
 /* event implementations */
 
 void eventbuttonpress(XEvent* e) {
-	Arg arg;
+	Arg arg = {.i = 0};
 	Client* c;
 	Monitor* m;
 	XButtonPressedEvent* ev = &e->xbutton;
@@ -1344,18 +1334,17 @@ int applysizehints(Client* c, int* x, int* y, int* w, int* h, bool interact) {
 }
 
 void arrange(Monitor* m) {
-	XEvent ev;
-	if (m)
-		showhide(m->stack);
-	else for (m = mons; m; m = m->next)
-		showhide(m->stack);
 	if (m) {
+		showhide(m->stack);
 		arrangemon(m);
 		restack(m);
 	} else {
 		for (m = mons; m; m = m->next)
+			showhide(m->stack);
+		for (m = mons; m; m = m->next)
 			arrangemon(m);
 		XSync(dpy, false);
+		XEvent ev;
 		while (XCheckMaskEvent(dpy, EnterWindowMask, &ev));
 	}
 }
