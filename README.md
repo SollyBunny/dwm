@@ -104,7 +104,7 @@ done
 
 Many tools exist to do this such as:
 * [`status`](https://github.com/SollyBunny/status): My own tool to do this
-* [`slstatus`](https://tools.suckless.org/slstatus/): Suckless batteries uncluded status
+* [`slstatus`](https://tools.suckless.org/slstatus/): Suckless batteries included status
 * [`dwmstatus`](https://git.suckless.org/dwmstatus/): Suckless barebones status
 
 ## Patches
