@@ -2846,6 +2846,20 @@ void xinitvisual(void) {
 }
 
 int main(int argc, char* argv[]) {
+	char* envThemeColor = getenv("THEME_COLOR");
+	if (envThemeColor)
+	{
+		unsigned int r, g, b;
+		if (sscanf(envThemeColor, "%u;%u;%u", &r, &g, &b) == 3) {
+			if (r > 255) r = 255;
+			if (g > 255) g = 255;
+			if (b > 255) b = 255;
+			static char envThemeColorHex[1 + 2 + 2 + 2 + 1];
+			snprintf(envThemeColorHex, sizeof(envThemeColorHex), "#%02X%02X%02X", r, g, b);
+			colors[SchemeSel][ColBg] = envThemeColorHex;
+		}
+	}
+
 	for (int i = 1; i < argc; i++) {
 		if (!strcmp(argv[i], "-fn")) /* font or font set */
 			fonts[0] = argv[++i];
